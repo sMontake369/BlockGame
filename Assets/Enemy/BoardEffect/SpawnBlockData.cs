@@ -96,7 +96,7 @@ public class SpawnBlockData : BaseEffectData
 
         if(spawnType == SpawnType.SandBlock) rootBlock = GamM.RootConvert<SandBlock>(rootBlock);
 
-        FraM.SetRBlock(rootBlock);
+        FraM.SetRFrame(rootBlock);
 
         if(spawnType == SpawnType.FromSpawnPos)
         {

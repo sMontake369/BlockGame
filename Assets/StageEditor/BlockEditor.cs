@@ -61,7 +61,7 @@ public class BlockEditor : MonoBehaviour
 
         //frameの生成
         Vector2Int vector2Int = new Vector2Int(12, 12);
-        EdiM.FraM.SetFrame(vector2Int);
+        EdiM.FraM.EditFrame(vector2Int);
         EdiM.GeneratePanel(vector2Int);
 
         //rootBlockの生成
@@ -109,13 +109,13 @@ public class BlockEditor : MonoBehaviour
     void GenerateBlock()
     {
         Vector3Int pos = Vector3Int.RoundToInt(screenPos);
-        if(EdiM.FraM.IsWithinBoard(pos) && EdiM.FraM.FrameListList[pos.y][pos.x] == null)
+        if(EdiM.FraM.IsWithinBoard(pos) && !EdiM.FraM.FrameListList[pos.y][pos.x].IsContain())
         {
             BaseBlock block = EdiM.GamM.GenerateBlock(BlockType.Mino, (ColorType)colorTypeDropdown.value, selectedTexture);
             block.mainRenderer.material.mainTexture = selectedTexture; //2度手間、いつか直す
             block.frameIndex = pos;
             rootBlock.AddBlock(block, pos);
-            EdiM.FraM.SetBlock(block); 
+            EdiM.FraM.SetFrame(block); 
         }
     }
 
@@ -135,7 +135,7 @@ public class BlockEditor : MonoBehaviour
             EdiM.FraM.DeleteBlock(block);
             rootBlock.BlockListList[block.shapeIndex.y][block.shapeIndex.x] = null;
             BlockPool.ReleaseNotBaseBlock(block);
-            block.rootBlock = null;
+            block.DeleteRootBlock();
             break;
         }
     }
@@ -166,7 +166,7 @@ public class BlockEditor : MonoBehaviour
         if(selectedBlockData == null) return;
         rootBlock = EdiM.GamM.GenerateRBlock(selectedBlockData);
         pivotObj.transform.position = selectedBlockData.pivotPos;
-        EdiM.FraM.SetRBlock(rootBlock);
+        EdiM.FraM.SetRFrame(rootBlock);
     }
 
     public void OnClickDelete()
@@ -183,7 +183,7 @@ public class BlockEditor : MonoBehaviour
 
         rootBlock = EdiM.GamM.GenerateRBlock();
         pivotObj.transform.position = new Vector3(0, 0, 0);
-        EdiM.FraM.SetRBlock(rootBlock);
+        EdiM.FraM.SetRFrame(rootBlock);
     }
 
     public void OnClickSave()

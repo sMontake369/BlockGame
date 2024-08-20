@@ -53,7 +53,7 @@ public class MainGameManager : MonoBehaviour
         foreach(BaseBlock baseBlock in baseBlockList)
         if(baseBlock != null) baseBlock.frameIndex = BatM.battleData.blockSpawnPos + baseBlock.shapeIndex;
 
-        FraM.SetRBlock(playerBlock);
+        FraM.SetRFrame(playerBlock);
 
         if(FraM.IsConflict(playerBlock, Vector3Int.zero)) 
         {
@@ -163,7 +163,7 @@ public class MainGameManager : MonoBehaviour
             holdBlock.transform.position = this.transform.position + BatM.battleData.holdBlockPos;
             holdBlock.pivot.transform.rotation = Quaternion.identity;
 
-            FraM.SetRBlock(playerBlock);
+            FraM.SetRFrame(playerBlock);
         }
     }
 
@@ -178,12 +178,12 @@ public class MainGameManager : MonoBehaviour
 
             for(int x = FraM.LMovableBorder.lowerLeft.x; x < FraM.LMovableBorder.upperRight.x; x++)
             {
-                if(FraM.FrameListList[y][x] == null)
+                if(!FraM.FrameListList[y][x].IsContain())
                 {
                     isLine = false;
                     break;
                 }
-                if(FraM.FrameListList[y][x].blockType == BlockType.Mino) canDelete = true;
+                if(FraM.FrameListList[y][x].BaseBlock.blockType == BlockType.Mino) canDelete = true;
             }
             if(canDelete && isLine) lineList.Add(y);
         }
@@ -213,15 +213,15 @@ public class MainGameManager : MonoBehaviour
             for(int x = 0; x < FraM.FrameListList[y].Count; x++)
             {
                 if(FraM.FrameListList[y][x] == null) continue;
-                if(FraM.FrameListList[y][x].blockType != BlockType.Mino) continue;
-                if(FraM.FrameListList[y][x].rootBlock.generationNum > maxGenerationNum) 
+                if(FraM.FrameListList[y][x].BaseBlock.blockType != BlockType.Mino) continue;
+                if(FraM.FrameListList[y][x].BaseBlock.RootBlock.generationNum > maxGenerationNum) 
                 {
                     nextSearchBlockList.Clear();
-                    maxGenerationNum = FraM.FrameListList[y][x].rootBlock.generationNum;
-                    colorType = FraM.FrameListList[y][x].colorType;
-                    nextSearchBlockList.Add(FraM.FrameListList[y][x]);
+                    maxGenerationNum = FraM.FrameListList[y][x].BaseBlock.RootBlock.generationNum;
+                    colorType = FraM.FrameListList[y][x].BaseBlock.colorType;
+                    nextSearchBlockList.Add(FraM.FrameListList[y][x].BaseBlock);
                 }
-                else if(FraM.FrameListList[y][x].rootBlock.generationNum == maxGenerationNum) nextSearchBlockList.Add(FraM.FrameListList[y][x]);
+                else if(FraM.FrameListList[y][x].BaseBlock.RootBlock.generationNum == maxGenerationNum) nextSearchBlockList.Add(FraM.FrameListList[y][x].BaseBlock);
             }
         }
 
@@ -249,7 +249,7 @@ public class MainGameManager : MonoBehaviour
                 {
                     Vector2Int searchIndex = index + neighborIndex;
                     if(!FraM.IsWithinBoard(new Vector3Int(searchIndex.x, searchIndex.y, 0)) || !lineList.Contains(searchIndex.y)) continue; //ボード外かどうか
-                    BaseBlock searchBlock = FraM.FrameListList[searchIndex.y][searchIndex.x]; //隣接するブロックを取得
+                    BaseBlock searchBlock = FraM.FrameListList[searchIndex.y][searchIndex.x].BaseBlock; //隣接するブロックを取得
                     if(searchBlock == null) continue;
                     if(searchBlock.blockType == BlockType.Mino && !deleteBlockList.Contains(searchBlock)) //削除するブロックリストに含まれているかどうか
                     {
@@ -273,7 +273,7 @@ public class MainGameManager : MonoBehaviour
             }
         }
 
-        foreach (BaseBlock baseBlock in deleteBlockList)
+        foreach(BaseBlock baseBlock in deleteBlockList)
         {
             baseBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
             await UniTask.Delay(1);
@@ -290,12 +290,12 @@ public class MainGameManager : MonoBehaviour
         foreach(int y in lineList)
         {
             await UniTask.Delay(100);
-            List<RootBlock> rootBlockList = FraM.GetBlocks(y + 1, FraM.FrameListList.Count - 1);
+            List<RootBlock> rootBlockList = FraM.GetRBlocks(y + 1, FraM.FrameListList.Count - 1);
             foreach(RootBlock rootBlock in rootBlockList) FraM.DeleteRBlock(rootBlock);
             foreach(RootBlock rootBlock in rootBlockList) 
             {
                 rootBlock.Transform(Vector3Int.down);
-                FraM.SetRBlock(rootBlock); //下に落ちれなかった場合、SetBlockされないため、応急措置
+                FraM.SetRFrame(rootBlock); //下に落ちれなかった場合、SetBlockされないため、応急措置
             }
         }
         if(mainState != MainStateType.idle) mainState = MainStateType.running;
@@ -323,11 +323,11 @@ public class MainGameManager : MonoBehaviour
         BaseBlock newBlock = oldBlock.AddComponent<T>();
         newBlock.blockType = oldBlock.blockType;
         newBlock.frameIndex = oldBlock.frameIndex;
-        oldBlock.rootBlock.AddBlock(newBlock, oldBlock.shapeIndex, false);
+        oldBlock.RootBlock.AddBlock(newBlock, oldBlock.shapeIndex, false);
 
         FraM.DeleteBlock(oldBlock);
         DestroyImmediate(oldBlock);
-        FraM.SetBlock(newBlock);
+        FraM.SetFrame(newBlock);
 
         return newBlock as T;
     }

@@ -84,6 +84,7 @@ public class GhostBlock : RootBlock
         foreach(BaseBlock block in BlockList)
         {
             block.mainRenderer.material.color = new Color(1, 1, 1, 0.6f);
+            block.blockType = BlockType.Ghost;
         }
     }
 

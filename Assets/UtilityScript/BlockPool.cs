@@ -124,7 +124,7 @@ public class BlockPool : MonoBehaviour
         BaseBlock newBlock = oldBlock.AddComponent<T>();
         newBlock.blockType = oldBlock.blockType;
         newBlock.frameIndex = oldBlock.frameIndex;
-        oldBlock.rootBlock.AddBlock(newBlock, oldBlock.shapeIndex, false);
+        oldBlock.RootBlock.AddBlock(newBlock, oldBlock.shapeIndex, false);
 
         DestroyImmediate(oldBlock);
 

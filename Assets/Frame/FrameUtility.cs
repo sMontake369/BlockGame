@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class FrameUtility
 {
-    public static List<List<BaseBlock>> blockList;
+    public static List<List<RootBlock>> blockList;
 
     public static List<List<T>> Generate<T>(int X, int Y)
     {

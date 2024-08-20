@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class RootBlock : MonoBehaviour
 {
@@ -38,7 +37,7 @@ public class RootBlock : MonoBehaviour
         if(FraM.IsConflict(this, offset)) return true;
         FraM.DeleteRBlock(this);
         Move(offset);
-        FraM.SetRBlock(this);
+        FraM.SetRFrame(this);
         return false;
     }
 
@@ -50,7 +49,7 @@ public class RootBlock : MonoBehaviour
         {
             SRS(-offset);
         }
-        FraM.SetRBlock(this);
+        FraM.SetRFrame(this);
     }
 
     public virtual void Move(Vector3Int offset) //ブロックを移動(ボードを更新しない)
@@ -168,8 +167,8 @@ public class RootBlock : MonoBehaviour
             }
             DRootBlock.AddBlock(baseBlock, baseBlock.shapeIndex, false);
         }       
-        FraM.SetRBlock(this);
-        FraM.SetRBlock(DRootBlock);
+        FraM.SetRFrame(this);
+        FraM.SetRFrame(DRootBlock);
     }
 
     public int GetBlockNum() //ブロックの数を取得
@@ -206,7 +205,7 @@ public class RootBlock : MonoBehaviour
         if(setPos) baseBlock.transform.localPosition = transform.position + shapeIndex;
         baseBlock.transform.rotation = Quaternion.Euler(new Vector3(-90,0,0));
         baseBlock.transform.parent = pivot.transform;
-        baseBlock.rootBlock = this;
+        baseBlock.SetRootBlock(this);
         baseBlock.shapeIndex = shapeIndex;
     }
 

@@ -15,7 +15,7 @@ public class IceBlock : BaseBlock
     public override BaseBlock OnDelete(bool checkNeighbor = true) //ブロックが削除された後の処理
     {
         mainRenderer.material.mainTexture = previousMaterial;
-        rootBlock.GamM.BlockConvert<BaseBlock>(this);
+        RootBlock.GamM.BlockConvert<BaseBlock>(this);
         return null;
     }
 }

@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class BaseBlock : MonoBehaviour
 {
-    public RootBlock rootBlock; //親のブロック
+    RootBlock rootBlock; //親のブロック
+    public RootBlock RootBlock { get { if(rootBlock) return rootBlock; else return null; }}
     public BlockType blockType; //ブロックの種類
     public ColorType colorType; //ブロックの色
     public Renderer mainRenderer; //レンダラー
@@ -22,6 +23,16 @@ public class BaseBlock : MonoBehaviour
     void SetOutline() //アウトラインを設定
     {
         
+    }
+
+    public void SetRootBlock(RootBlock rootBlock) //ルートブロックを追加
+    {
+        this.rootBlock = rootBlock;
+    }
+
+    public void DeleteRootBlock() //ルートブロックを削除  　いる？
+    {
+        rootBlock = null;
     }
 
     public virtual BaseBlock OnDelete(bool checkNeighbor = true) //ブロックが削除された後の処理
@@ -65,7 +76,8 @@ public enum BlockType
     Air,
     Wall,
     Mino,
-    BackGround
+    BackGround,
+    Ghost
 }
 
 public enum ColorType
