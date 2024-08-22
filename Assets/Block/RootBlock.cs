@@ -37,7 +37,7 @@ public class RootBlock : MonoBehaviour
         if(FraM.IsConflict(this, offset)) return true;
         FraM.DeleteRBlock(this);
         Move(offset);
-        FraM.SetRFrame(this);
+        FraM.SetRBlock(this);
         return false;
     }
 
@@ -49,7 +49,7 @@ public class RootBlock : MonoBehaviour
         {
             SRS(-offset);
         }
-        FraM.SetRFrame(this);
+        FraM.SetRBlock(this);
     }
 
     public virtual void Move(Vector3Int offset) //ブロックを移動(ボードを更新しない)
@@ -167,8 +167,8 @@ public class RootBlock : MonoBehaviour
             }
             DRootBlock.AddBlock(baseBlock, baseBlock.shapeIndex, false);
         }       
-        FraM.SetRFrame(this);
-        FraM.SetRFrame(DRootBlock);
+        FraM.SetRBlock(this);
+        FraM.SetRBlock(DRootBlock);
     }
 
     public int GetBlockNum() //ブロックの数を取得

@@ -10,14 +10,16 @@ public class FrameManager : MonoBehaviour
     BattleManager BatM;
 
     public FrameData frameData { get; private set; }
+    BorderInt frameBorder;
+    BorderInt movableBorder;
     
     List<List<FrameBox>> frameListList = new List<List<FrameBox>>();
-    public List<List<FrameBox>> FrameListList { get => frameListList; }
+    //public List<List<FrameBox>> FrameListList { get => frameListList; private set => FrameListList = value; }
 
-    public BorderInt LMovableBorder { get => frameData.moveSize; private set => frameData.moveSize = value; }
-    public BorderInt LFrameBorder { get => frameData.frameSize; private set => frameData.frameSize = value; }
-    public BorderInt WMovableBorder { get => BatM.battlePos + frameData.moveSize; }
-    public BorderInt WFrameBorder { get => BatM.battlePos + frameData.frameSize; }
+    public BorderInt LMovableBorder { get => movableBorder; }
+    public BorderInt LFrameBorder { get => frameBorder; }
+    public BorderInt WMovableBorder { get => BatM.battlePos + movableBorder; }
+    public BorderInt WFrameBorder { get => BatM.battlePos + frameBorder; }
 
     public void Init()
     {
@@ -47,11 +49,13 @@ public class FrameManager : MonoBehaviour
     public void SetFrame(FrameData frameData)
     {
         this.frameData = frameData;
+        frameBorder = new BorderInt(Vector3Int.zero, frameData.frameSize);
+        movableBorder = frameData.moveSize;
 
         //frameListListを再生成
-        //全てのframeBoxを削除したい
+        DeleteAllBlocks();
         frameListList.Clear();
-        frameListList = FrameUtility.Generate<FrameBox>(frameData.frameSize.max.x, frameData.frameSize.max.y);
+        frameListList = FrameUtility.Generate<FrameBox>(frameData.frameSize.x + 1, frameData.frameSize.y + 1);
 
         for(int y = 0; y < frameListList.Count; y++)
         for(int x = 0; x < frameListList[y].Count; x++)
@@ -64,28 +68,12 @@ public class FrameManager : MonoBehaviour
             baseBlock.transform.position = this.transform.position + new Vector3(data.blockPos.x, data.blockPos.y, 0);
             frameListList[data.blockPos.y][data.blockPos.x].SetBlock(baseBlock);
         }
+    }
 
-        // backRBlock = GamM.GenerateRBlock();
-        // backRBlock.transform.position = this.transform.position;
-        // backRBlock.transform.parent = this.transform;
-        // backRBlock.name = "BackGroundRBlock";
-        // //backGroundBlock.SetListList(new Vector2Int(frameData.frameSize.max.x, frameData.frameSize.max.y)); //お試し
-        // backRBlock.transform.Translate(new Vector3(0, 0, 0.1f));
-        // foreach(PosTexture data in frameData.BGPosList)
-        // {
-        //     BaseBlock baseBlock = GamM.GenerateBlock(BlockType.BackGround, ColorType.None, data.texture); //仮
-        //     backRBlock.AddBlock(baseBlock, data.blockPos);
-        // }
-
-        //Texture texture = Addressables.LoadAssetAsync<Texture>("g1610").WaitForCompletion();
-        // 全ての配列にブロックを生成
-        // for(int y = 0; y < backGroundBlock.BlockListList.Count; y++)
-        // for(int x = 0; x < backGroundBlock.BlockListList[y].Count; x++)
-        // {
-        //     if(backGroundBlock.BlockListList[y][x] != null) continue;
-        //     BaseBlock baseBlock = GamM.GenerateBBlock(BlockType.BackGround, ColorType.None, texture); //仮
-        //     backGroundBlock.AddBlock(baseBlock, new Vector3Int(x, y, 0));
-        // }
+    public void DeleteAllFrame()
+    {
+        DeleteAllBlocks();
+        frameListList.Clear();
     }
 
     public bool IsConflict(RootBlock rootBlock, Vector3Int offset) //ブロックが衝突しているかどうか
@@ -114,8 +102,8 @@ public class FrameManager : MonoBehaviour
 
     public bool IsWithinBoard(Vector3Int pos) //posがボード内かどうか
     {
-        if(LMovableBorder.lowerLeft.x <= pos.x && pos.x < LMovableBorder.upperRight.x && 
-        LMovableBorder.lowerLeft.y <= pos.y && pos.y < LMovableBorder.upperRight.y) return true;
+        if(LMovableBorder.lowerLeft.x <= pos.x && pos.x <= LMovableBorder.upperRight.x && 
+        LMovableBorder.lowerLeft.y <= pos.y && pos.y <= LMovableBorder.upperRight.y) return true;
         else return false;
     }
 
@@ -148,22 +136,34 @@ public class FrameManager : MonoBehaviour
         for(int y = from.y; y < to.y; y++)
         for(int x = from.x; x < to.x; x++)
         {
-            if(frameListList[y][x] == null) continue;
+            if(!frameListList[y][x].IsContain()) continue;
             blockList.Add(frameListList[y][x].Delete());
         }
         return blockList;
     }
 
-    public void SetRFrame(RootBlock rootBlock) //ルートブロックをボードにセット　//ベースブロックをボードにセット Vector2Int posを追加すべき
+    public List<BaseBlock> DeleteAllBlocks() //全てのブロックをボードから消す
+    {
+        List<BaseBlock> blockList = new List<BaseBlock>();
+        for(int y = 0; y < frameListList.Count; y++)
+        for(int x = 0; x < frameListList[y].Count; x++)
+        {
+            if(!frameListList[y][x].IsContain()) continue;
+            blockList.Add(frameListList[y][x].Delete());
+        }
+        return blockList;
+    }
+
+    public void SetRBlock(RootBlock rootBlock) //ルートブロックをボードにセット　//ベースブロックをボードにセット Vector2Int posを追加すべき
     {
         for(int y = 0; y < rootBlock.BlockListList.Count; y++)
         for(int x = 0; x < rootBlock.BlockListList[y].Count; x++)
-        if(rootBlock.BlockListList[y][x] != null) SetFrame(rootBlock.BlockListList[y][x], false);
+        if(rootBlock.BlockListList[y][x] != null) SetBlock(rootBlock.BlockListList[y][x], false);
 
         if(GamM.playerBlock) GamM.playerBlock.GenerateGhostBlock(); //GamMがプレイヤーブロックを持っているかどうか確認してほしい
     }
 
-    public bool SetFrame(BaseBlock block, bool doUpdateGhost = true) //ベースブロックをボードにセット Vector2Int posを追加すべき
+    public bool SetBlock(BaseBlock block, bool doUpdateGhost = true) //ベースブロックをボードにセット Vector2Int posを追加すべき
     {
         if(GamM.mainState == MainStateType.idle && block != null) 
         {
@@ -182,11 +182,61 @@ public class FrameManager : MonoBehaviour
         return true;
     }
 
-    public List<RootBlock> GetRBlocks(int from, int to) //指定範囲のルートブロックリストを取得 //ラインじゃなくて範囲にしたい
+    public BaseBlock GetBlock(Vector3Int pos) //指定位置のベースブロックを取得
     {
-        List<RootBlock> rootBlockList = new List<RootBlock>();
-        for(int y = from; y < to; y++)
+        if(!IsWithinBoard(pos)) return null;
+        if(!frameListList[pos.y][pos.x].IsContain()) return null;
+        return frameListList[pos.y][pos.x].BaseBlock;
+    }
+
+    public List<List<BaseBlock>> GetBlocks(Vector3Int from, Vector3Int to) //指定範囲のベースブロックリストを取得
+    {
+        if(!IsWithinBoard(from) && !IsWithinBoard(to)) return null;
+        List<List<BaseBlock>> blockListList = new List<List<BaseBlock>>();
+        for(int y = from.y; y < to.y; y++)
+        {
+            List<BaseBlock> blockList = new List<BaseBlock>();
+            for(int x = from.x; x < to.x; x++)
+            {
+                if(!frameListList[y][x].IsContain()) continue;
+                blockList.Add(frameListList[y][x].BaseBlock);
+            }
+            blockListList.Add(blockList);
+        }
+        return blockListList;
+    }
+
+    public List<BaseBlock> GetBlockLine(int y)
+    {
+        if(y < 0 || y >= frameListList.Count) return null;
+        List<BaseBlock> blockList = new List<BaseBlock>();
         for(int x = 0; x < frameListList[y].Count; x++)
+        {
+            if(!frameListList[y][x].IsContain()) continue;
+            blockList.Add(frameListList[y][x].BaseBlock);
+        }
+        return blockList;
+    }
+
+    public List<RootBlock> GetRBlockLine(int y)
+    {
+        if(y < 0 || y >= frameListList.Count) return null;
+        List<RootBlock> rootBlockList = new List<RootBlock>();
+        for(int x = 0; x < frameListList[y].Count; x++)
+        {
+            if(!frameListList[y][x].IsContain()) continue;
+            if(frameListList[y][x].BaseBlock.RootBlock == GamM.playerBlock) continue;
+            if(!rootBlockList.Contains(frameListList[y][x].BaseBlock.RootBlock)) rootBlockList.Add(frameListList[y][x].BaseBlock.RootBlock);
+        }
+        return rootBlockList;
+    }
+
+    public List<RootBlock> GetRBlocks(Vector3Int from, Vector3Int to) //指定範囲のルートブロックリストを取得 //ラインじゃなくて範囲にしたい なくてもいいかも
+    {
+        if(!IsWithinBoard(from) || !IsWithinBoard(to)) return null;
+        List<RootBlock> rootBlockList = new List<RootBlock>();
+        for(int y = from.y; y < to.y; y++)
+        for(int x = from.x; x < to.x; x++)
         {
             if(!frameListList[y][x].IsContain()) continue;
             if(frameListList[y][x].BaseBlock.blockType != BlockType.Mino) continue;
@@ -194,5 +244,15 @@ public class FrameManager : MonoBehaviour
             if(!rootBlockList.Contains(frameListList[y][x].BaseBlock.RootBlock)) rootBlockList.Add(frameListList[y][x].BaseBlock.RootBlock);
         }
         return rootBlockList;
+    }
+
+    public void OnPlayerGround() //プレイヤーブロックが地面に着地した時
+    {
+        for(int y = 0; y < frameListList.Count; y++)
+        for(int x = 0; x < frameListList[y].Count; x++)
+        {
+            if(!frameListList[y][x].IsContain()) continue;
+            frameListList[y][x].OnPlayerGround();
+        }
     }
 }

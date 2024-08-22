@@ -13,8 +13,8 @@ public class FrameData : ScriptableObject
     public List<PosTexture> BGPosList;
     [Header("フレームのデータ")]
     public List<PosTextureType> framePosList;
-    [Header("フレームのサイズ")]
-    public BorderInt frameSize; 
+    [Header("フレームのサイズ")] //フレームのデータと同じ情報をもってしまっている。消したい
+    public Vector3Int frameSize;
     [Header("ブロックが移動できる範囲")]
     public BorderInt moveSize;
 }

@@ -35,7 +35,7 @@ public class BaseBlock : MonoBehaviour
         rootBlock = null;
     }
 
-    public virtual BaseBlock OnDelete(bool checkNeighbor = true) //ブロックが削除された後の処理
+    public virtual BaseBlock OnDelete(bool checkNeighbor = true) //ブロックが削除される前の処理
     {
         if(!this.isActiveAndEnabled) return null;
         rootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
@@ -77,7 +77,7 @@ public enum BlockType
     Wall,
     Mino,
     BackGround,
-    Ghost
+    Ghost,
 }
 
 public enum ColorType

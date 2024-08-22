@@ -73,7 +73,7 @@ public class BattleManager : MonoBehaviour
 
         //battleの位置を設定
         Vector3Int pos = Vector3Int.RoundToInt(this.transform.position);
-        battlePos = new BorderInt(pos, pos + battleData.frameData.frameSize.max);
+        battlePos = new BorderInt(pos, pos + battleData.frameData.frameSize);
 
         //フレームを生成
         FrameData frameData = battleData.frameData;

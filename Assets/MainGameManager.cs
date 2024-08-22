@@ -53,7 +53,7 @@ public class MainGameManager : MonoBehaviour
         foreach(BaseBlock baseBlock in baseBlockList)
         if(baseBlock != null) baseBlock.frameIndex = BatM.battleData.blockSpawnPos + baseBlock.shapeIndex;
 
-        FraM.SetRFrame(playerBlock);
+        FraM.SetRBlock(playerBlock);
 
         if(FraM.IsConflict(playerBlock, Vector3Int.zero)) 
         {
@@ -163,7 +163,7 @@ public class MainGameManager : MonoBehaviour
             holdBlock.transform.position = this.transform.position + BatM.battleData.holdBlockPos;
             holdBlock.pivot.transform.rotation = Quaternion.identity;
 
-            FraM.SetRFrame(playerBlock);
+            FraM.SetRBlock(playerBlock);
         }
     }
 
@@ -178,12 +178,13 @@ public class MainGameManager : MonoBehaviour
 
             for(int x = FraM.LMovableBorder.lowerLeft.x; x < FraM.LMovableBorder.upperRight.x; x++)
             {
-                if(!FraM.FrameListList[y][x].IsContain())
+                BaseBlock baseBlock = FraM.GetBlock(new Vector3Int(x, y, 0));
+                if(baseBlock == null)
                 {
                     isLine = false;
                     break;
                 }
-                if(FraM.FrameListList[y][x].BaseBlock.blockType == BlockType.Mino) canDelete = true;
+                if(baseBlock.blockType == BlockType.Mino) canDelete = true;
             }
             if(canDelete && isLine) lineList.Add(y);
         }
@@ -197,35 +198,36 @@ public class MainGameManager : MonoBehaviour
         List<BaseBlock> deleteBlockList = new List<BaseBlock>(); //削除するブロックリスト
         List<BaseBlock> curSearchBlockList = new List<BaseBlock>(); //現在探索しているブロックリスト
         List<BaseBlock> nextSearchBlockList = new List<BaseBlock>(); //次に探索するブロックリスト
-        ColorType colorType = ColorType.Blue; //変更する色
+        ColorType colorType; //変更する色
 
-        List<Vector2Int> neighborIndexList = new List<Vector2Int>()
+        List<Vector3Int> neighborIndexList = new List<Vector3Int>()
         {
-            new Vector2Int(0, 1), //上
-            new Vector2Int(1, 0), //右
-            new Vector2Int(0,-1), //下
-            new Vector2Int(-1, 0) //左
+            Vector3Int.up,
+            Vector3Int.right,
+            Vector3Int.down,
+            Vector3Int.left
         };
 
-        foreach(int y in lineList) //最大の世代数を持つブロックを取得
+        //最大の世代数を持つルートブロックを取得
+        List<BaseBlock> blockList = new List<BaseBlock>(); //ブロックリスト
+        BaseBlock maxGenBlock = null;
+        int maxGenerationNum = 0;
+        foreach(int y in lineList) blockList.AddRange(FraM.GetBlockLine(y));
+
+        foreach(BaseBlock block in blockList)
         {
-            int maxGenerationNum = 0;
-            for(int x = 0; x < FraM.FrameListList[y].Count; x++)
+            if(block.blockType != BlockType.Mino) continue;
+            if(block.RootBlock.generationNum > maxGenerationNum) 
             {
-                if(FraM.FrameListList[y][x] == null) continue;
-                if(FraM.FrameListList[y][x].BaseBlock.blockType != BlockType.Mino) continue;
-                if(FraM.FrameListList[y][x].BaseBlock.RootBlock.generationNum > maxGenerationNum) 
-                {
-                    nextSearchBlockList.Clear();
-                    maxGenerationNum = FraM.FrameListList[y][x].BaseBlock.RootBlock.generationNum;
-                    colorType = FraM.FrameListList[y][x].BaseBlock.colorType;
-                    nextSearchBlockList.Add(FraM.FrameListList[y][x].BaseBlock);
-                }
-                else if(FraM.FrameListList[y][x].BaseBlock.RootBlock.generationNum == maxGenerationNum) nextSearchBlockList.Add(FraM.FrameListList[y][x].BaseBlock);
+                maxGenBlock = block;
+                maxGenerationNum = block.RootBlock.generationNum;
             }
         }
 
-        foreach(BaseBlock baseBlock in nextSearchBlockList) //最大の世代数を持つブロックを追加
+        colorType = maxGenBlock.colorType;
+        nextSearchBlockList.AddRange(maxGenBlock.RootBlock.BlockList);
+
+        foreach(BaseBlock baseBlock in nextSearchBlockList) //最大の世代数を持つブロックを削除する
         {
             BaseBlock deleteBlock = baseBlock.OnDelete(); //削除
             if(deleteBlock != null)
@@ -235,21 +237,23 @@ public class MainGameManager : MonoBehaviour
                 deleteBlockList.Add(deleteBlock);
             }
         }
+
         int count = 0;
         while(nextSearchBlockList.Count > 0) //隣接するブロックがなくなるまで探索
         {
             curSearchBlockList.Clear();
             curSearchBlockList.AddRange(nextSearchBlockList); //次に探索するブロックリストを現在の探索ブロックリストに変更
             nextSearchBlockList.Clear();
+
             foreach(BaseBlock baseBlock in curSearchBlockList)
             {
                 if(baseBlock == null) continue;
-                Vector2Int index = new Vector2Int(baseBlock.frameIndex.x, baseBlock.frameIndex.y);
-                foreach(Vector2Int neighborIndex in neighborIndexList)
+                Vector3Int index = baseBlock.frameIndex;
+                foreach(Vector3Int neighborIndex in neighborIndexList)
                 {
-                    Vector2Int searchIndex = index + neighborIndex;
-                    if(!FraM.IsWithinBoard(new Vector3Int(searchIndex.x, searchIndex.y, 0)) || !lineList.Contains(searchIndex.y)) continue; //ボード外かどうか
-                    BaseBlock searchBlock = FraM.FrameListList[searchIndex.y][searchIndex.x].BaseBlock; //隣接するブロックを取得
+                    Vector3Int searchIndex = index + neighborIndex;
+                    if(!lineList.Contains(searchIndex.y)) continue; //削除するラインに含まれているかどうか
+                    BaseBlock searchBlock = FraM.GetBlock(searchIndex); //隣接するブロックを取得
                     if(searchBlock == null) continue;
                     if(searchBlock.blockType == BlockType.Mino && !deleteBlockList.Contains(searchBlock)) //削除するブロックリストに含まれているかどうか
                     {
@@ -257,13 +261,13 @@ public class MainGameManager : MonoBehaviour
                         if(deleteBlock != null)
                         {
                             FraM.DeleteBlock(deleteBlock);
-
+                            deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
                             deleteBlockList.Add(deleteBlock);
                             nextSearchBlockList.Add(deleteBlock);
                         }
                     }
                 }
-                //if(isExist) await UniTask.Delay(3); //削除したブロックがある場合、少し待つ
+            await UniTask.Delay(3); //削除したブロックがある場合、少し待つ
             }
             count++;
             if(count > 100) 
@@ -271,12 +275,6 @@ public class MainGameManager : MonoBehaviour
                 Debug.Log("無限ループ");
                 break;
             }
-        }
-
-        foreach(BaseBlock baseBlock in deleteBlockList)
-        {
-            baseBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
-            await UniTask.Delay(1);
         }
 
         if(mainState != MainStateType.idle) AttM.AddAttackQueue(deleteBlockList); //攻撃ブロックを生成
@@ -290,12 +288,12 @@ public class MainGameManager : MonoBehaviour
         foreach(int y in lineList)
         {
             await UniTask.Delay(100);
-            List<RootBlock> rootBlockList = FraM.GetRBlocks(y + 1, FraM.FrameListList.Count - 1);
+            List<RootBlock> rootBlockList = FraM.GetRBlocks(FraM.LMovableBorder.min + new Vector3Int(0, y + 1, 0), FraM.LMovableBorder.max);
             foreach(RootBlock rootBlock in rootBlockList) FraM.DeleteRBlock(rootBlock);
             foreach(RootBlock rootBlock in rootBlockList) 
             {
                 rootBlock.Transform(Vector3Int.down);
-                FraM.SetRFrame(rootBlock); //下に落ちれなかった場合、SetBlockされないため、応急措置
+                FraM.SetRBlock(rootBlock); //下に落ちれなかった場合、SetBlockされないため、応急措置
             }
         }
         if(mainState != MainStateType.idle) mainState = MainStateType.running;
@@ -327,7 +325,7 @@ public class MainGameManager : MonoBehaviour
 
         FraM.DeleteBlock(oldBlock);
         DestroyImmediate(oldBlock);
-        FraM.SetFrame(newBlock);
+        FraM.SetBlock(newBlock);
 
         return newBlock as T;
     }

@@ -111,12 +111,12 @@ public class FrameEditor : MonoBehaviour
     void GenerateBlock()
     {
         Vector3Int pos = Vector3Int.RoundToInt(screenPos);
-        if(EdiM.FraM.IsWithinBoard(pos) && !EdiM.FraM.FrameListList[pos.y][pos.x].IsContain())
+        if(EdiM.FraM.GetBlock(pos) == null)
         {
             BaseBlock block = EdiM.GamM.GenerateBlock((BlockType)blockTypeDropdown.value, (ColorType)colorTypeDropdown.value, selectedTexture);
             block.frameIndex = pos;
             selectRBlock.AddBlock(block, pos);
-            EdiM.FraM.SetFrame(block); 
+            EdiM.FraM.SetBlock(block); 
         }
     }
 
@@ -153,7 +153,7 @@ public class FrameEditor : MonoBehaviour
         }
 
         if(selectedFrameData == null) frameSize = new Vector2Int(int.Parse(xInputField.text), int.Parse(yInputField.text));
-        else frameSize = new Vector2Int(selectedFrameData.frameSize.max.x, selectedFrameData.frameSize.max.y);
+        else frameSize = new Vector2Int(selectedFrameData.frameSize.x, selectedFrameData.frameSize.y);
         EdiM.FraM.EditFrame(frameSize);
         EdiM.GeneratePanel(frameSize);
 
@@ -190,7 +190,7 @@ public class FrameEditor : MonoBehaviour
         selectedFrameData = null;
 
         frameRBlock = EdiM.GamM.GenerateRBlock();
-        EdiM.FraM.SetRFrame(frameRBlock);
+        EdiM.FraM.SetRBlock(frameRBlock);
     }
 
     public void OnClickSave()
@@ -219,7 +219,7 @@ public class FrameEditor : MonoBehaviour
         selectedFrameData.BGPosList = new List<PosTexture>();
         foreach(BaseBlock block in backGroundRBlock.BlockList) selectedFrameData.BGPosList.Add(
             new PosTexture { blockPos = block.shapeIndex, texture = block.mainRenderer.material.mainTexture });
-        selectedFrameData.frameSize = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(frameSize.x, frameSize.y, 0));
+        selectedFrameData.frameSize = new Vector3Int(frameSize.x, frameSize.y, 0);
         selectedFrameData.moveSize = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(frameSize.x, frameSize.y, 0));
 
         //BlockDataの保存
@@ -245,7 +245,7 @@ public class FrameEditor : MonoBehaviour
         Debug.Log("SetGenMode");
         mode = FrameEditMode.block;
         EdiM.FraM.DeleteRBlock(backGroundRBlock);
-        EdiM.FraM.SetRFrame(frameRBlock);
+        EdiM.FraM.SetRBlock(frameRBlock);
         backGroundRBlock.gameObject.SetActive(false);
         frameRBlock.gameObject.SetActive(true);
         selectRBlock = frameRBlock;
@@ -254,7 +254,7 @@ public class FrameEditor : MonoBehaviour
         Debug.Log("SetBackGround");
         mode = FrameEditMode.backGround;
         EdiM.FraM.DeleteRBlock(frameRBlock);
-        EdiM.FraM.SetRFrame(backGroundRBlock);
+        EdiM.FraM.SetRBlock(backGroundRBlock);
         frameRBlock.gameObject.SetActive(false);
         backGroundRBlock.gameObject.SetActive(true);
         selectRBlock = backGroundRBlock;

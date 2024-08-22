@@ -28,7 +28,7 @@ public class SandBlock : RootBlock
         isFalling = true;
         FraM.DeleteRBlock(this);
         foreach(BaseBlock baseBlock in BlockList) baseBlock.frameIndex += Vector3Int.down;
-        FraM.SetRFrame(this);
+        FraM.SetRBlock(this);
         await this.transform.DOMove(this.transform.position + Vector3.down, 0.05f).SetEase(Ease.Linear);
         isFalling = false;
     }

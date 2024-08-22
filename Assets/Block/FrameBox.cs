@@ -7,43 +7,49 @@ public class FrameBox
     BaseBlock baseBlock;
     public BaseBlock BaseBlock { get { return baseBlock; } }
 
-    BaseBlock tmpBlock;
-    //public List<List<BaseBlock>> BlockListList { get { return rootBlock.BlockListList; } }
+    BaseBlock tmpBlock; 
 
 
-    public void OnPlayerBlockGrounded() //プレイヤーブロックが地面に着地した時
+    public void OnPlayerGround() //プレイヤーブロックが地面に着地した時
     {
 
     }
 
     public void OnSetBlock() //ブロックが自身の位置にセットされた時
     {
-        
+
     }
 
     public bool SetBlock(BaseBlock baseBlock)
     {
         if(baseBlock == null) return false;
         if(IsContain()) return false;
+        //baseBlockがAirだったらtmpBlockによける
+        if(baseBlock.blockType == BlockType.BackGround) tmpBlock = baseBlock;
         this.baseBlock = baseBlock;
         OnSetBlock();
         return true;
     }
 
+    //ブロックがセットされているか
     public bool IsContain()
     {
-        return baseBlock != null;
+        if(baseBlock == null) return false;
+        if(baseBlock.blockType == BlockType.BackGround) return false;
+        return true;
     }
 
     public BaseBlock Delete() //フレームから削除
     {
         BaseBlock tmp = baseBlock;
         baseBlock = null;
+
+        if(tmpBlock != null) baseBlock = tmpBlock;
         tmpBlock = null;
         return tmp;
     }
 
-    public void DestroyBlock()
+    public void Destroy()
     {
         if(baseBlock) baseBlock.DestroyBlock();
         if(tmpBlock) tmpBlock.DestroyBlock();
