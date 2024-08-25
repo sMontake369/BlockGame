@@ -171,12 +171,12 @@ public class MainGameManager : MonoBehaviour
     {
         mainState = MainStateType.checkLine;
         List<int> lineList = new List<int>();
-        for(int y = FraM.LMovableBorder.lowerLeft.y; y < FraM.LMovableBorder.upperRight.y; y++)
+        for(int y = FraM.LFrameBorder.lowerLeft.y; y < FraM.LFrameBorder.upperRight.y; y++)
         {
             bool isLine = true;
             bool canDelete = false;
 
-            for(int x = FraM.LMovableBorder.lowerLeft.x; x < FraM.LMovableBorder.upperRight.x; x++)
+            for(int x = FraM.LFrameBorder.lowerLeft.x; x < FraM.LFrameBorder.upperRight.x; x++)
             {
                 BaseBlock baseBlock = FraM.GetBlock(new Vector3Int(x, y, 0));
                 if(baseBlock == null)
@@ -253,6 +253,7 @@ public class MainGameManager : MonoBehaviour
                 {
                     Vector3Int searchIndex = index + neighborIndex;
                     if(!lineList.Contains(searchIndex.y)) continue; //削除するラインに含まれているかどうか
+
                     BaseBlock searchBlock = FraM.GetBlock(searchIndex); //隣接するブロックを取得
                     if(searchBlock == null) continue;
                     if(searchBlock.blockType == BlockType.Mino && !deleteBlockList.Contains(searchBlock)) //削除するブロックリストに含まれているかどうか
@@ -287,8 +288,8 @@ public class MainGameManager : MonoBehaviour
 		lineList.Reverse();
         foreach(int y in lineList)
         {
-            await UniTask.Delay(100);
-            List<RootBlock> rootBlockList = FraM.GetRBlocks(FraM.LMovableBorder.min + new Vector3Int(0, y + 1, 0), FraM.LMovableBorder.max);
+            await UniTask.Delay(50);
+            List<RootBlock> rootBlockList = FraM.GetRBlocks(new Vector3Int(0, y + 1, 0), FraM.LFrameBorder.max);
             foreach(RootBlock rootBlock in rootBlockList) FraM.DeleteRBlock(rootBlock);
             foreach(RootBlock rootBlock in rootBlockList) 
             {

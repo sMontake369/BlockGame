@@ -7,28 +7,22 @@ public class RootBlock : MonoBehaviour
 {
     public MainGameManager GamM;
     public FrameManager FraM;
+
     public GameObject pivot;
     GhostBlock ghostBlock;
     public GhostBlock GhostBlock { get { return ghostBlock; } }
     List<List<BaseBlock>> blockListList = new List<List<BaseBlock>>(); //ブロックのリスト
     public List<List<BaseBlock>> BlockListList { get { return blockListList;} }
     public List<BaseBlock> BlockList { get { return GetBaseBlockList(); } }
-    [SerializeField]
-    public int generationNum = 0; //世代番号
 
     [SerializeField]
-    public int count = 0;
+    public int generationNum = 0; //世代番号
 
     public virtual void Init(MainGameManager gamM, FrameManager fraM)
     {
         this.GamM = gamM;
         this.FraM = fraM;
     }
-
-    // public void Update()
-    // {
-    //     count = GetBlockNum();
-    // }
 
     public virtual bool Transform(Vector3Int offset) //ブロックを移動(ボードを更新)
     {
@@ -89,17 +83,12 @@ public class RootBlock : MonoBehaviour
 
     }
 
-    public bool CheckValidBlock()
+    public void CheckExistBlock()
     {
-        if(GetBlockNum() == 0)
-        {
-            BlockPool.ReleaseNotRootBlock(this);
-            return false;
-        }
-        return true;
+        if(GetBlockNum() == 0) BlockPool.ReleaseNotRootBlock(this);
     }
 
-    public void CheckNeighbor()
+    public void CheckDivision()
     {
         if(GetBlockNum() == 0)
         {

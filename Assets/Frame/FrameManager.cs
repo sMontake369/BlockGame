@@ -1,30 +1,26 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection.Emit;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 public class FrameManager : MonoBehaviour
 {
     MainGameManager GamM;
     BattleManager BatM;
-
-    public FrameData frameData { get; private set; }
     BorderInt frameBorder;
-    BorderInt movableBorder;
     
     List<List<FrameBox>> frameListList = new List<List<FrameBox>>();
     //public List<List<FrameBox>> FrameListList { get => frameListList; private set => FrameListList = value; }
 
-    public BorderInt LMovableBorder { get => movableBorder; }
     public BorderInt LFrameBorder { get => frameBorder; }
-    public BorderInt WMovableBorder { get => BatM.battlePos + movableBorder; }
     public BorderInt WFrameBorder { get => BatM.battlePos + frameBorder; }
 
     public void Init()
     {
         BatM = FindFirstObjectByType<BattleManager>();
         GamM = FindFirstObjectByType<MainGameManager>();
+        frameBorder = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(0, 0, 0));
 
         if(!BatM || !GamM) 
         {
@@ -46,27 +42,89 @@ public class FrameManager : MonoBehaviour
         // LMovableBorder = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(size.x, size.y, 0));
     }
 
-    public void SetFrame(FrameData frameData)
+    List<List<FrameBox>> GenerateFrame(FrameData frameData) //フレームを生成
     {
-        this.frameData = frameData;
-        frameBorder = new BorderInt(Vector3Int.zero, frameData.frameSize);
-        movableBorder = frameData.moveSize;
+        List<List<FrameBox>> newFrameListList = new List<List<FrameBox>>();
+        for(int y = 0; y < frameData.frameSize.y; y++)
+        {
+            newFrameListList.Add(new List<FrameBox>());
+            for(int x = 0; x < frameData.frameSize.x; x++)
+            {
+                newFrameListList[y].Add(new FrameBox());
+                if(frameData.indexDataList[(y * frameData.frameSize.x) + x] == -2) newFrameListList[y][x].canMove = false;
+                else newFrameListList[y][x].canMove = true;
 
-        //frameListListを再生成
-        DeleteAllBlocks();
-        frameListList.Clear();
-        frameListList = FrameUtility.Generate<FrameBox>(frameData.frameSize.x + 1, frameData.frameSize.y + 1);
+                if(frameData.indexDataList[(y * frameData.frameSize.x) + x] <= -1) continue;
+                
+                if(frameData.blockDataList.Count <= frameData.indexDataList[(y * frameData.frameSize.x) + x])
+                {
+                    Debug.Log("FrameManager: 存在しないブロックデータが指定されています");
+                    continue;
+                }
+                BlockData blockData = frameData.blockDataList[frameData.indexDataList[(y * frameData.frameSize.x) + x]];
+                BaseBlock baseBlock = GamM.GenerateBlock(blockData.blockType, blockData.colorType, blockData.texture);
+                baseBlock.transform.parent = this.transform;
+                newFrameListList[y][x].SetBlock(baseBlock);
+            }
+        }
+        return newFrameListList;
+    }
 
+    public Vector3Int SetFrame(FrameData frameData)
+    {
+        DeleteAllFrame();
+
+        frameListList = GenerateFrame(frameData);
         for(int y = 0; y < frameListList.Count; y++)
         for(int x = 0; x < frameListList[y].Count; x++)
-        frameListList[y][x] = new FrameBox();
-
-        foreach(PosTextureType data in frameData.framePosList)
         {
-            BaseBlock baseBlock = GamM.GenerateBlock(data.blockType, ColorType.None, data.texture); //仮
-            baseBlock.transform.parent = this.transform;
-            baseBlock.transform.position = this.transform.position + new Vector3(data.blockPos.x, data.blockPos.y, 0);
-            frameListList[data.blockPos.y][data.blockPos.x].SetBlock(baseBlock);
+            if(!frameListList[y][x].IsContain()) continue;
+            frameListList[y][x].BaseBlock.transform.position = this.transform.position + new Vector3(x, y, 0);
+        }
+        Vector3Int frameSize = new Vector3Int(frameListList[0].Count, frameListList.Count, 0);
+        frameBorder.SetMinMax(Vector3Int.zero, frameSize - new Vector3Int(1, 1, 0)); //配列は0から始まるので-1
+
+        return frameSize;
+    }
+
+    public void AddFrame(Vector3Int pos, FrameData frameData, bool axisX)
+    {
+        if(!IsWithinBoard(pos))
+        {
+            Debug.Log("FrameManager: AddFrame: pos is out of board");
+            return;
+        }
+
+        if(GamM.playerBlock) DeleteRBlock(GamM.playerBlock);
+        List<List<FrameBox>> newFrameListList = GenerateFrame(frameData);
+        Vector3Int frameSize = new Vector3Int(newFrameListList[0].Count, newFrameListList.Count, 0);
+
+        Vector3Int insertNum = CheckFrameBox(pos, frameSize, axisX);
+        FrameUtility.InsertListList(frameListList, pos, insertNum);
+
+        for(int y = pos.y; y < frameListList.Count; y++)
+        for(int x = pos.x; x < frameListList[y].Count; x++)
+        {
+            if(frameListList[y][x] == null) continue;
+            if(!frameListList[y][x].IsContain()) continue;
+            frameListList[y][x].BaseBlock.frameIndex += insertNum;
+            frameListList[y][x].BaseBlock.transform.position += insertNum;
+        }
+
+        for(int y = 0; y < newFrameListList.Count; y++)
+        for(int x = 0; x < newFrameListList[y].Count; x++)
+        {
+            frameListList[pos.y + y][pos.x + x] = newFrameListList[y][x];
+
+            if(!newFrameListList[y][x].IsContain()) continue;
+            newFrameListList[y][x].BaseBlock.transform.position = this.transform.position + pos + new Vector3(x, y, 0);
+        }
+
+        frameBorder.max += insertNum;
+        if(GamM.playerBlock) 
+        {
+            SetRBlock(GamM.playerBlock);
+            GamM.playerBlock.GenerateGhostBlock();
         }
     }
 
@@ -74,6 +132,73 @@ public class FrameManager : MonoBehaviour
     {
         DeleteAllBlocks();
         frameListList.Clear();
+        frameBorder.max = Vector3Int.zero;
+    }
+
+    Vector3Int CheckFrameBox(Vector3Int pos, Vector3Int size, bool axisX)
+    {
+        Vector3Int vector3Int = new Vector3Int(0, 0, 0);
+        if(axisX) goto CheckX;
+        
+        for(int y = pos.y; y < pos.y + size.y; y++)
+        {
+            if(frameListList.Count <= y) 
+            {
+                vector3Int.y++;
+                continue;
+            }
+            foreach(FrameBox frameBox in frameListList[y]) 
+            {
+                if(frameBox.canMove) 
+                {
+                    vector3Int.y++;
+                    break;
+                }
+            }
+        }
+        return vector3Int;
+        CheckX:
+
+        for(int x = pos.x; x < pos.x + size.x; x++)
+        {
+            foreach(List<FrameBox> frameBoxList in frameListList) 
+            {
+                if(frameBoxList.Count <= x) 
+                {
+                    vector3Int.x++;
+                    continue;
+                }
+                if(frameBoxList[x].canMove) 
+                {
+                    vector3Int.x++;
+                    break;
+                }
+            }
+        }
+        return vector3Int;
+    }
+
+    public void DeleteFrame(Vector3Int pos, Vector3Int size)
+    {
+        if(!IsWithinBoard(pos) || !IsWithinBoard(pos + size))
+        {
+            Debug.Log("FrameManager: DeleteFrame: pos is out of board");
+            return;
+        }
+
+        for(int y = pos.y; y < size.y; y++)
+        for(int x = pos.x; x < size.x; x++)
+        {
+            frameListList[y][x].Delete();
+            frameListList[y][x].canMove = false;
+        }
+    }
+
+    public bool IsWithinBoard(Vector3Int pos) //posがボード内かどうか
+    {
+        if(LFrameBorder.lowerLeft.x <= pos.x && pos.x <= LFrameBorder.upperRight.x && 
+        LFrameBorder.lowerLeft.y <= pos.y && pos.y <= LFrameBorder.upperRight.y) return true;
+        else return false;
     }
 
     public bool IsConflict(RootBlock rootBlock, Vector3Int offset) //ブロックが衝突しているかどうか
@@ -93,18 +218,12 @@ public class FrameManager : MonoBehaviour
         if(!IsWithinBoard(pos)) return true;
 
         //ブロックが存在しているかどうか
+        if(!frameListList[pos.y][pos.x].canMove) return false;
         if(!frameListList[pos.y][pos.x].IsContain()) return false;
         if(frameListList[pos.y][pos.x].BaseBlock.RootBlock == block.RootBlock || 
         frameListList[pos.y][pos.x].BaseBlock.blockType == BlockType.Ghost ||
         frameListList[pos.y][pos.x].BaseBlock.RootBlock == GamM.playerBlock) return false; //ブロックが自分自身か、ゴーストブロックかどうか
         else return true;
-    }
-
-    public bool IsWithinBoard(Vector3Int pos) //posがボード内かどうか
-    {
-        if(LMovableBorder.lowerLeft.x <= pos.x && pos.x <= LMovableBorder.upperRight.x && 
-        LMovableBorder.lowerLeft.y <= pos.y && pos.y <= LMovableBorder.upperRight.y) return true;
-        else return false;
     }
 
     public RootBlock DeleteRBlock(RootBlock rootBlock) //ルートブロックをボードから消す
@@ -130,7 +249,7 @@ public class FrameManager : MonoBehaviour
         return null;
     }
 
-    public List<BaseBlock> DeleteBlocks(Vector2Int from, Vector2Int to) //指定範囲のブロックをボードから消す
+    public List<BaseBlock> DeleteBlocks(Vector3Int from, Vector3Int to) //指定範囲のブロックをボードから消す
     {
         List<BaseBlock> blockList = new List<BaseBlock>();
         for(int y = from.y; y < to.y; y++)

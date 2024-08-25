@@ -165,7 +165,7 @@ public class AttackManager : MonoBehaviour
             attackRBlock = GamM.RootConvert<AttackRBlock>(GamM.GenerateRBlock());
             attackRBlock.transform.parent = this.transform;
             attackRBlock.name = "AttackRBlock";
-            attackRBlock.transform.position = FraM.WMovableBorder.lowerLeft + BatM.battleData.attackPos;
+            attackRBlock.transform.position = FraM.WFrameBorder.lowerLeft + BatM.battleData.attackPos;
 
             AttackUI.gameObject.SetActive(true);
             AttackUI.transform.SetParent(attackRBlock.transform);

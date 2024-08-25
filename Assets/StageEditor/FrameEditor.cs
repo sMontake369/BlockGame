@@ -139,43 +139,38 @@ public class FrameEditor : MonoBehaviour
         selectedTexture = pointerObject.GetComponent<RawImage>().texture;
     }
 
-    public void OnClickLoad()
-    {
-        frameRBlock.Destroy();
-        backGroundRBlock.Destroy();
-        selectedFrameData = null;
-        foreach(FrameData frameData in frameDataList.blockDataList)
-        if(frameData.name == frameDataDropdown.options[frameDataDropdown.value].text)
-        {
-            selectedFrameData = frameData;
-            nameInputField.text = frameData.name;
-            break;
-        }
+    // public void OnClickLoad()
+    // {
+    //     frameRBlock.Destroy();
+    //     backGroundRBlock.Destroy();
+    //     selectedFrameData = null;
+    //     foreach(FrameData frameData in frameDataList.blockDataList)
+    //     if(frameData.name == frameDataDropdown.options[frameDataDropdown.value].text)
+    //     {
+    //         selectedFrameData = frameData;
+    //         nameInputField.text = frameData.name;
+    //         break;
+    //     }
 
-        if(selectedFrameData == null) frameSize = new Vector2Int(int.Parse(xInputField.text), int.Parse(yInputField.text));
-        else frameSize = new Vector2Int(selectedFrameData.frameSize.x, selectedFrameData.frameSize.y);
-        EdiM.FraM.EditFrame(frameSize);
-        EdiM.GeneratePanel(frameSize);
+    //     if(selectedFrameData == null) frameSize = new Vector2Int(int.Parse(xInputField.text), int.Parse(yInputField.text));
+    //     else frameSize = new Vector2Int(selectedFrameData.frameSize.x, selectedFrameData.frameSize.y);
+    //     EdiM.FraM.EditFrame(frameSize);
+    //     EdiM.GeneratePanel(frameSize);
 
-        if(selectedFrameData == null) return;
+    //     if(selectedFrameData == null) return;
 
-        xInputField.text = frameSize.x.ToString();
-        yInputField.text = frameSize.y.ToString();
-        frameRBlock = EdiM.GamM.GenerateRBlock();
-        foreach(PosTextureType posTextureType in selectedFrameData.framePosList)
-        {
-            BaseBlock block = EdiM.GamM.GenerateBlock(posTextureType.blockType, (ColorType)colorTypeDropdown.value, posTextureType.texture);
-            frameRBlock.AddBlock(block, posTextureType.blockPos);
-        }
-        backGroundRBlock = EdiM.GamM.GenerateRBlock();
-        foreach(PosTexture posTexture in selectedFrameData.BGPosList)
-        {
-            BaseBlock block = EdiM.GamM.GenerateBlock(BlockType.Mino, ColorType.None, posTexture.texture);
-            backGroundRBlock.AddBlock(block, posTexture.blockPos);
-        }
+    //     xInputField.text = frameSize.x.ToString();
+    //     yInputField.text = frameSize.y.ToString();
+    //     frameRBlock = EdiM.GamM.GenerateRBlock();
+    //     foreach(BlockData posTextureType in selectedFrameData.framePosList)
+    //     {
+    //         BaseBlock block = EdiM.GamM.GenerateBlock(posTextureType.blockType, (ColorType)colorTypeDropdown.value, posTextureType.texture);
+    //         frameRBlock.AddBlock(block, posTextureType.blockPos);
+    //     }
+    //     backGroundRBlock = EdiM.GamM.GenerateRBlock();
         
-        SetGenMode();
-    }
+    //     SetGenMode();
+    // }
 
     public void OnClickDelete()
     {
@@ -193,53 +188,50 @@ public class FrameEditor : MonoBehaviour
         EdiM.FraM.SetRBlock(frameRBlock);
     }
 
-    public void OnClickSave()
-    {
-        string name = nameInputField.text;
+    // public void OnClickSave()
+    // {
+    //     string name = nameInputField.text;
 
-        if(string.IsNullOrEmpty(name) || frameRBlock.GetBlockNum() == 0)
-        {
-            Debug.Log("FrameData is empty or Name is empty!");
-            return;
-        }
+    //     if(string.IsNullOrEmpty(name) || frameRBlock.GetBlockNum() == 0)
+    //     {
+    //         Debug.Log("FrameData is empty or Name is empty!");
+    //         return;
+    //     }
 
-        bool isNew = false;
-        if(selectedFrameData == null) 
-        {
-            isNew = true;
-            selectedFrameData = ScriptableObject.CreateInstance<FrameData>();
-        }
+    //     bool isNew = false;
+    //     if(selectedFrameData == null) 
+    //     {
+    //         isNew = true;
+    //         selectedFrameData = ScriptableObject.CreateInstance<FrameData>();
+    //     }
 
-        //FrameDataの設定
-        selectedFrameData.name = name;
-        selectedFrameData.framePosList = new List<PosTextureType>();
-        foreach(BaseBlock block in frameRBlock.BlockList) selectedFrameData.framePosList.Add(
-            new PosTextureType { blockPos = block.shapeIndex, texture = block.mainRenderer.material.mainTexture, blockType = block.blockType });
+    //     //FrameDataの設定
+    //     selectedFrameData.name = name;
+    //     selectedFrameData.framePosList = new List<BlockData>();
+    //     foreach(BaseBlock block in frameRBlock.BlockList) selectedFrameData.framePosList.Add(
+    //         new BlockData { blockPos = block.shapeIndex, texture = block.mainRenderer.material.mainTexture, blockType = block.blockType });
 
-        selectedFrameData.BGPosList = new List<PosTexture>();
-        foreach(BaseBlock block in backGroundRBlock.BlockList) selectedFrameData.BGPosList.Add(
-            new PosTexture { blockPos = block.shapeIndex, texture = block.mainRenderer.material.mainTexture });
-        selectedFrameData.frameSize = new Vector3Int(frameSize.x, frameSize.y, 0);
-        selectedFrameData.moveSize = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(frameSize.x, frameSize.y, 0));
+    //     selectedFrameData.frameSize = new Vector3Int(frameSize.x, frameSize.y, 0);
+    //     selectedFrameData.moveSize = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(frameSize.x, frameSize.y, 0));
 
-        //BlockDataの保存
-        string path = "Assets/ContentsData/FrameData/" + name + ".asset";
-        if(isNew == true)
-        {
-            UnityEditor.AssetDatabase.CreateAsset(selectedFrameData, path);
-            frameDataList.blockDataList.Add(selectedFrameData);
-            frameDataDropdown.options.Add(new TMP_Dropdown.OptionData(selectedFrameData.name));
-            frameDataDropdown.value = frameDataList.blockDataList.Count;
-            frameDataDropdown.RefreshShownValue();
-            Debug.Log("Save CreateData");
-        }
-        else 
-        {
-            EditorUtility.SetDirty(selectedFrameData);
-            UnityEditor.AssetDatabase.SaveAssets();
-            Debug.Log("Save FrameData");
-        }
-    }
+    //     //BlockDataの保存
+    //     string path = "Assets/ContentsData/FrameData/" + name + ".asset";
+    //     if(isNew == true)
+    //     {
+    //         UnityEditor.AssetDatabase.CreateAsset(selectedFrameData, path);
+    //         frameDataList.blockDataList.Add(selectedFrameData);
+    //         frameDataDropdown.options.Add(new TMP_Dropdown.OptionData(selectedFrameData.name));
+    //         frameDataDropdown.value = frameDataList.blockDataList.Count;
+    //         frameDataDropdown.RefreshShownValue();
+    //         Debug.Log("Save CreateData");
+    //     }
+    //     else 
+    //     {
+    //         EditorUtility.SetDirty(selectedFrameData);
+    //         UnityEditor.AssetDatabase.SaveAssets();
+    //         Debug.Log("Save FrameData");
+    //     }
+    // }
 
     public void SetGenMode() {
         Debug.Log("SetGenMode");

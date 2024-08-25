@@ -1,35 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static System.Console;
 
 [CreateAssetMenu(fileName = "Frame_", menuName = "CreateFrameData")]
 [System.Serializable]
 public class FrameData : ScriptableObject
 {
-    [Header("フレームデータの名前")]
-    public new string name;
-    [Header("地面のデータ")]
-    public List<PosTexture> BGPosList;
-    [Header("フレームのデータ")]
-    public List<PosTextureType> framePosList;
-    [Header("フレームのサイズ")] //フレームのデータと同じ情報をもってしまっている。消したい
+    [Header("フレームのサイズ")]
     public Vector3Int frameSize;
-    [Header("ブロックが移動できる範囲")]
-    public BorderInt moveSize;
+
+    [Header("ブロックが移動できるかとブロックの情報")] //サイズはlength、設置負荷の場合は0,ブロックの情報は1~割り当てる。
+    public List<int> indexDataList;
+
+    [Header("ブロックの情報とテクスチャのリスト")]
+    public List<BlockData> blockDataList;
+    
 }
 
 [System.Serializable]
-public class PosTexture
-{    
-    public Vector3Int blockPos;
-    public Texture texture;
-}
-
-[System.Serializable]
-public class PosTextureType : PosTexture
-{    
+public class BlockData //ブロックの情報とindexを紐づける
+{
     public BlockType blockType;
+    public ColorType colorType;
+    public Texture texture;
 }
 
 [System.Serializable]

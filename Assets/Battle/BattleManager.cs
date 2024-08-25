@@ -71,14 +71,14 @@ public class BattleManager : MonoBehaviour
         textureData = battleData.textureData;
         blockShapeData = battleData.blockShapeData;
 
-        //battleの位置を設定
-        Vector3Int pos = Vector3Int.RoundToInt(this.transform.position);
-        battlePos = new BorderInt(pos, pos + battleData.frameData.frameSize);
-
         //フレームを生成
         FrameData frameData = battleData.frameData;
         
-        FraM.SetFrame(frameData);
+        Vector3Int frameSize = FraM.SetFrame(frameData);
+
+        //battleの位置を設定
+        Vector3Int pos = Vector3Int.RoundToInt(this.transform.position);
+        battlePos = new BorderInt(pos, pos + frameSize);
 
         //敵を生成
         EneM.Generate(battleData.enemyDataList);

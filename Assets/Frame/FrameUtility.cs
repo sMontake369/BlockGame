@@ -18,7 +18,7 @@ public static class FrameUtility
     }
 
     /// <summary>
-    /// 2次元リストの指定した位置に値を挿入
+    /// 2次元リストの指定した位置に要素を挿入
     /// listList = 2次元リスト
     /// elementListList = 挿入する要素
     /// insertColumn = 挿入する列
@@ -27,7 +27,7 @@ public static class FrameUtility
     public static void InsertListList<T>(List<List<T>> listList, List<List<T>> elementListList, int insertY, int insertX)
     {
         if(insertY < 0) insertY = 0;//リストの先頭に挿入
-        if(insertY > listList.Count) insertY = listList.Count - 1;//リストの先頭に挿入
+        if(insertY > listList.Count) insertY = listList.Count - 1;//リストの最後に挿入
         
         for(int y = elementListList.Count - 1; y >= 0 ; y--) //マイナスからやるの気持ち悪い
         {
@@ -41,15 +41,30 @@ public static class FrameUtility
     }
 
     /// <summary>
-    /// 1次元リストの指定した位置に値を挿入
-    /// list = 1次元リスト
-    /// element = 挿入する要素
-    /// insertIndex = 挿入するインデックス
+    /// 2次元リストの指定した位置に要素を挿入
+    /// listList = 2次元リスト
+    /// insertNum = 挿入する要素の数
+    /// index = 挿入する位置
     /// </summary>
-    public static void InsertList<T>(List<T> list, T element, int insertColumn)
-    {
-        list.Insert(insertColumn, element);
+    public static void InsertListList<T>(List<List<T>> listList, Vector3Int index, Vector3Int insertNum)
+    {   
+        int column = listList[0].Count;
+        for(int y = index.y; y < insertNum.y; y++)
+        {
+            listList.Insert(index.y, new List<T>(listList[0].Count)); //y軸にリストを追加
+            for(int x = 0; x < column; x++) listList[index.y].Add(default); //x軸に要素を追加
+        }
+
+        for(int x = 0; x < insertNum.x; x++)
+        {
+            for(int y = 0; y < listList.Count; y++) listList[y].Insert(index.x, default); //x軸に要素を追加
+        }
     }
+
+//足りない要素
+//配列をn行又は、n列追加する
+//配列の間に要素を追加するときに、今ある要素をどうずらすか
+//不足している要素を探索する
 
     public static List<List<T>> DeepCopy<T>(List<List<T>> listList)
     {

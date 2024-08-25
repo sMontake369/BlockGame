@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class FrameBox
 {
+    public bool canMove = true; //移動できるか
     BaseBlock baseBlock;
     public BaseBlock BaseBlock { get { return baseBlock; } }
 
@@ -34,6 +35,7 @@ public class FrameBox
     //ブロックがセットされているか
     public bool IsContain()
     {
+        if(!canMove) return false;
         if(baseBlock == null) return false;
         if(baseBlock.blockType == BlockType.BackGround) return false;
         return true;

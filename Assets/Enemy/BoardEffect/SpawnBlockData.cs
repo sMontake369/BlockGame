@@ -35,13 +35,13 @@ public class SpawnBlockData : BaseEffectData
         switch(spawnType)
         {
             case SpawnType.RandomPos:
-                pos = new Vector3Int(Random.Range(0, FraM.LMovableBorder.width), Random.Range(0, FraM.LMovableBorder.height - 8), 0);
+                pos = new Vector3Int(Random.Range(0, FraM.LFrameBorder.width), Random.Range(0, FraM.LFrameBorder.height - 8), 0);
                 break;
             case SpawnType.FromSpawnPos:
-                pos = new Vector3Int(Random.Range(0, FraM.LMovableBorder.width), BatM.battleData.blockSpawnPos.y, 0);
+                pos = new Vector3Int(Random.Range(0, FraM.LFrameBorder.width), BatM.battleData.blockSpawnPos.y, 0);
                 break;
             case SpawnType.SandBlock:
-                pos = new Vector3Int(Random.Range(0, FraM.LMovableBorder.width), Random.Range(0, FraM.LMovableBorder.height - 8), 0);
+                pos = new Vector3Int(Random.Range(0, FraM.LFrameBorder.width), Random.Range(0, FraM.LFrameBorder.height - 8), 0);
                 break;
         }
         Vector3Int rot = new Vector3Int(0, 0, Random.Range(0, 4));
@@ -52,7 +52,7 @@ public class SpawnBlockData : BaseEffectData
         rootBlock.transform.position = enemy.transform.position;
         foreach(List<BaseBlock> blockList in rootBlock.BlockListList)
         foreach(BaseBlock baseBlock in blockList)
-        if(baseBlock != null) baseBlock.frameIndex = FraM.LMovableBorder.lowerLeft + pos + baseBlock.shapeIndex;
+        if(baseBlock != null) baseBlock.frameIndex = FraM.LFrameBorder.lowerLeft + pos + baseBlock.shapeIndex;
 
         //先に回転
         rootBlock.SRS(rot);
@@ -77,7 +77,7 @@ public class SpawnBlockData : BaseEffectData
         //ブロックの所定の位置に移動
         rootBlock.transform.localScale = Vector3.zero;
         _ = rootBlock.transform.DOScale(1, 0.4f).SetEase(Ease.OutBounce);
-        await rootBlock.transform.DOJump(FraM.WMovableBorder.lowerLeft + pos, 10, 1, 1.0f).SetEase(Ease.InExpo).SetEase(Ease.InQuint);
+        await rootBlock.transform.DOJump(FraM.WFrameBorder.lowerLeft + pos, 10, 1, 1.0f).SetEase(Ease.InExpo).SetEase(Ease.InQuint);
 
         //ゴーストブロックを消す
         rootBlock.DestroyGhostBlock();

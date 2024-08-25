@@ -40,8 +40,8 @@ public class BaseBlock : MonoBehaviour
         if(!this.isActiveAndEnabled) return null;
         rootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
         transform.parent = null;
-        if(checkNeighbor) rootBlock.CheckNeighbor();
-        else rootBlock.CheckValidBlock();
+        if(checkNeighbor) rootBlock.CheckDivision();
+        else rootBlock.CheckExistBlock();
         rootBlock = null;
         return this;
     }
@@ -49,8 +49,8 @@ public class BaseBlock : MonoBehaviour
     public BaseBlock ReleaseBlock(bool checkNeighbor = true) //強制的にrootBlockから抜ける
     {
         rootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
-        if(checkNeighbor) rootBlock.CheckNeighbor();
-        else rootBlock.CheckValidBlock();
+        if(checkNeighbor) rootBlock.CheckDivision();
+        else rootBlock.CheckExistBlock();
         rootBlock = null;
         return this;
     }
@@ -59,8 +59,8 @@ public class BaseBlock : MonoBehaviour
     {
         rootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
         BlockPool.ReleaseNotBaseBlock(this);
-        if(checkNeighbor) rootBlock.CheckNeighbor();
-        else if(checkValid) rootBlock.CheckValidBlock();
+        if(checkNeighbor) rootBlock.CheckDivision();
+        else if(checkValid) rootBlock.CheckExistBlock();
         rootBlock = null;
     }
 
