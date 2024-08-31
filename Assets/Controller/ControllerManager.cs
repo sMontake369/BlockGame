@@ -94,8 +94,7 @@ public class ControllerManager : MonoBehaviour
         {
             if(GamM.playerBlock.Transform(Vector3Int.down)) 
             {
-                holdDropTime = 0;
-                GamM.SetNextPlayerBlock();
+                OnGround();
             }
         }
         else if(value == 1) 
@@ -109,9 +108,14 @@ public class ControllerManager : MonoBehaviour
                     break;
                 }
             }
-            holdDropTime = 0;
-            GamM.SetNextPlayerBlock();
+            OnGround();
         }
+    }
+
+    void OnGround() //プレイヤーブロックが地面に着地した時
+    {
+        holdDropTime = 0;
+        GamM.SetNextPlayerBlock();
     }
 
     void HoldDrop(float value, bool performed)
@@ -126,7 +130,7 @@ public class ControllerManager : MonoBehaviour
         if(GamM == null || GamM.playerBlock == null) return;
         previousTime = 0;
         GamM.playerBlock.Destroy();
-        GamM.SetNextPlayerBlock();
+        OnGround();
 
         //GamM.SetHoldBlock();
     }

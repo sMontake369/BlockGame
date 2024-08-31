@@ -112,8 +112,6 @@ public class SpawnBlockData : BaseEffectData
                 }
             }
         }
-
-        if(GamM.mainState != MainStateType.idle) _ = GamM.CheckLine();
     }
 }
 

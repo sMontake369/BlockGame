@@ -39,11 +39,11 @@ public class MainGameManager : MonoBehaviour
         mainState = MainStateType.idle;
     }
 
-    public async void SetNextPlayerBlock() //次のプレイヤーブロックを生成
+    public void SetNextPlayerBlock() //次のプレイヤーブロックを生成
     {
         if(playerBlock) playerBlock.DestroyGhostBlock();
         playerBlock = null;
-        await CheckLine(); //これはここでいいのか？
+
         mainState = MainStateType.running;
 
         playerBlock = GetNextBlock();
@@ -167,16 +167,17 @@ public class MainGameManager : MonoBehaviour
         }
     }
 
-    public async UniTask CheckLine() //ラインが揃っているかチェック
+    public void CheckLine() //ラインが揃っているかチェック
     {
+        if(mainState != MainStateType.running) return;
         mainState = MainStateType.checkLine;
         List<int> lineList = new List<int>();
-        for(int y = FraM.LFrameBorder.lowerLeft.y; y < FraM.LFrameBorder.upperRight.y; y++)
+        for(int y = FraM.LFrameBorder.lowerLeft.y; y <= FraM.LFrameBorder.upperRight.y; y++)
         {
             bool isLine = true;
             bool canDelete = false;
 
-            for(int x = FraM.LFrameBorder.lowerLeft.x; x < FraM.LFrameBorder.upperRight.x; x++)
+            for(int x = FraM.LFrameBorder.lowerLeft.x; x <= FraM.LFrameBorder.upperRight.x; x++)
             {
                 BaseBlock baseBlock = FraM.GetBlock(new Vector3Int(x, y, 0));
                 if(baseBlock == null)
@@ -188,16 +189,17 @@ public class MainGameManager : MonoBehaviour
             }
             if(canDelete && isLine) lineList.Add(y);
         }
-        if(lineList.Count > 0) await DeleteLine(lineList);
-        else if(mainState != MainStateType.idle) mainState = MainStateType.running;
+        if(lineList.Count > 0 && mainState == MainStateType.checkLine) DeleteLine(lineList);
+        else if(mainState != MainStateType.checkLine) return;
+        else mainState = MainStateType.running;
     }
 
-    async UniTask DeleteLine(List<int> lineList) //ラインを消す
+    async void DeleteLine(List<int> lineList) //ラインを消す
     {
         mainState = MainStateType.deleting;
-        List<BaseBlock> deleteBlockList = new List<BaseBlock>(); //削除するブロックリスト
         List<BaseBlock> curSearchBlockList = new List<BaseBlock>(); //現在探索しているブロックリスト
         List<BaseBlock> nextSearchBlockList = new List<BaseBlock>(); //次に探索するブロックリスト
+        List<BaseBlock> deleteBlockList = new List<BaseBlock>(); //削除するブロックリスト
         ColorType colorType; //変更する色
 
         List<Vector3Int> neighborIndexList = new List<Vector3Int>()
@@ -209,9 +211,9 @@ public class MainGameManager : MonoBehaviour
         };
 
         //最大の世代数を持つルートブロックを取得
-        List<BaseBlock> blockList = new List<BaseBlock>(); //ブロックリスト
         BaseBlock maxGenBlock = null;
         int maxGenerationNum = 0;
+        List<BaseBlock> blockList = new List<BaseBlock>(); //ブロックリスト
         foreach(int y in lineList) blockList.AddRange(FraM.GetBlockLine(y));
 
         foreach(BaseBlock block in blockList)
@@ -227,20 +229,25 @@ public class MainGameManager : MonoBehaviour
         colorType = maxGenBlock.colorType;
         nextSearchBlockList.AddRange(maxGenBlock.RootBlock.BlockList);
 
-        foreach(BaseBlock baseBlock in nextSearchBlockList) //最大の世代数を持つブロックを削除する
-        {
-            BaseBlock deleteBlock = baseBlock.OnDelete(); //削除
-            if(deleteBlock != null)
-            {
-                deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); //色を変更
-                FraM.DeleteBlock(deleteBlock);
-                deleteBlockList.Add(deleteBlock);
-            }
-        }
-
         int count = 0;
         while(nextSearchBlockList.Count > 0) //隣接するブロックがなくなるまで探索
         {
+            await UniTask.Delay(3);
+            /*
+            baseBlock.OnDelete()内のrootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
+            を実行する前に1ms以上待機しないと、SetRBlock内でCheckLine()を実行するときに、クラッシュする
+            */
+            foreach(BaseBlock baseBlock in nextSearchBlockList) 
+            {
+                BaseBlock deleteBlock = baseBlock.OnDelete(); //削除　　　<- ここ
+                if(deleteBlock != null)
+                {
+                    FraM.DeleteBlock(deleteBlock);
+                    deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
+                    deleteBlockList.Add(deleteBlock);
+                }
+            }
+
             curSearchBlockList.Clear();
             curSearchBlockList.AddRange(nextSearchBlockList); //次に探索するブロックリストを現在の探索ブロックリストに変更
             nextSearchBlockList.Clear();
@@ -248,34 +255,23 @@ public class MainGameManager : MonoBehaviour
             foreach(BaseBlock baseBlock in curSearchBlockList)
             {
                 if(baseBlock == null) continue;
-                Vector3Int index = baseBlock.frameIndex;
                 foreach(Vector3Int neighborIndex in neighborIndexList)
                 {
-                    Vector3Int searchIndex = index + neighborIndex;
+                    Vector3Int searchIndex = baseBlock.frameIndex + neighborIndex;
                     if(!lineList.Contains(searchIndex.y)) continue; //削除するラインに含まれているかどうか
 
                     BaseBlock searchBlock = FraM.GetBlock(searchIndex); //隣接するブロックを取得
                     if(searchBlock == null) continue;
                     if(searchBlock.blockType == BlockType.Mino && !deleteBlockList.Contains(searchBlock)) //削除するブロックリストに含まれているかどうか
-                    {
-                        BaseBlock deleteBlock = searchBlock.OnDelete(); //削除
-                        if(deleteBlock != null)
-                        {
-                            FraM.DeleteBlock(deleteBlock);
-                            deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
-                            deleteBlockList.Add(deleteBlock);
-                            nextSearchBlockList.Add(deleteBlock);
-                        }
-                    }
+                    nextSearchBlockList.Add(searchBlock);
                 }
-            await UniTask.Delay(3); //削除したブロックがある場合、少し待つ
             }
             count++;
             if(count > 100) 
             {
                 Debug.Log("無限ループ");
                 break;
-            }
+            } 
         }
 
         if(mainState != MainStateType.idle) AttM.AddAttackQueue(deleteBlockList); //攻撃ブロックを生成

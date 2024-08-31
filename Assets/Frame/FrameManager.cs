@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection.Emit;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class FrameManager : MonoBehaviour
@@ -273,30 +274,27 @@ public class FrameManager : MonoBehaviour
         return blockList;
     }
 
-    public void SetRBlock(RootBlock rootBlock) //ルートブロックをボードにセット　//ベースブロックをボードにセット Vector2Int posを追加すべき
+    public bool SetRBlock(RootBlock rootBlock) //ルートブロックをボードにセット　//ベースブロックをボードにセット Vector2Int posを追加すべき
     {
-        for(int y = 0; y < rootBlock.BlockListList.Count; y++)
-        for(int x = 0; x < rootBlock.BlockListList[y].Count; x++)
-        if(rootBlock.BlockListList[y][x] != null) SetBlock(rootBlock.BlockListList[y][x], false);
+        if(rootBlock == null) return false;
+
+        foreach(BaseBlock block in rootBlock.BlockList)
+        SetBlock(block, true);
 
         if(GamM.playerBlock) GamM.playerBlock.GenerateGhostBlock(); //GamMがプレイヤーブロックを持っているかどうか確認してほしい
+        GamM.CheckLine();
+        return true;
     }
 
-    public bool SetBlock(BaseBlock block, bool doUpdateGhost = true) //ベースブロックをボードにセット Vector2Int posを追加すべき
+    public bool SetBlock(BaseBlock block, bool onlySet = false) //ベースブロックをボードにセット Vector2Int posを追加すべき
     {
-        if(GamM.mainState == MainStateType.idle && block != null) 
-        {
-            block.DestroyBlock();
-            return false;
-        }
-
         if(block == null) return false;
-        if(block.frameIndex.y < 0 || block.frameIndex.y > frameListList.Count || block.frameIndex.x < 0 || block.frameIndex.x > frameListList[0].Count) return false;
+        if(!IsWithinBoard(block.frameIndex)) return false;
         if(frameListList[block.frameIndex.y][block.frameIndex.x].IsContain()) return false;
 
         frameListList[block.frameIndex.y][block.frameIndex.x].SetBlock(block);
 
-        if(doUpdateGhost && GamM.playerBlock) GamM.playerBlock.GenerateGhostBlock(); //GamMがプレイヤーブロックを持っているかどうか確認してほしい
+        if(!onlySet && GamM.playerBlock) GamM.playerBlock.GenerateGhostBlock(); //GamMがプレイヤーブロックを持っているかどうか確認してほしい
 
         return true;
     }
@@ -327,7 +325,8 @@ public class FrameManager : MonoBehaviour
 
     public List<BaseBlock> GetBlockLine(int y)
     {
-        if(y < 0 || y >= frameListList.Count) return null;
+        if(y < 0 || y >= frameBorder.max.y) return null;
+        
         List<BaseBlock> blockList = new List<BaseBlock>();
         for(int x = 0; x < frameListList[y].Count; x++)
         {
@@ -354,8 +353,8 @@ public class FrameManager : MonoBehaviour
     {
         if(!IsWithinBoard(from) || !IsWithinBoard(to)) return null;
         List<RootBlock> rootBlockList = new List<RootBlock>();
-        for(int y = from.y; y < to.y; y++)
-        for(int x = from.x; x < to.x; x++)
+        for(int y = from.y; y <= to.y; y++)
+        for(int x = from.x; x <= to.x; x++)
         {
             if(!frameListList[y][x].IsContain()) continue;
             if(frameListList[y][x].BaseBlock.blockType != BlockType.Mino) continue;

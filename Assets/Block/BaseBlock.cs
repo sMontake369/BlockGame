@@ -37,7 +37,7 @@ public class BaseBlock : MonoBehaviour
 
     public virtual BaseBlock OnDelete(bool checkNeighbor = true) //ブロックが削除される前の処理
     {
-        if(!this.isActiveAndEnabled) return null;
+        if(!this.isActiveAndEnabled || rootBlock == null) return null;
         rootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
         transform.parent = null;
         if(checkNeighbor) rootBlock.CheckDivision();

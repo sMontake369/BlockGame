@@ -139,6 +139,7 @@ public class RootBlock : MonoBehaviour
         FraM.DeleteRBlock(this);
 
         RootBlock DRootBlock = GamM.GenerateRBlock(null);
+        DRootBlock.generationNum = generationNum;
         DRootBlock.name = "DRootBlock";
         DRootBlock.transform.position = transform.position;
         DRootBlock.pivot.transform.SetPositionAndRotation(pivot.transform.position, pivot.transform.rotation);
