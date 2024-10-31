@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "isPlayNum", menuName = "EffectRequirement/CreateIsPlayNum")]
-public class isPlayNum : EffectRequirement
+public class isPlayNum : AttackRequirement
 {
     MainGameManager GamM;
     RootBlock playerBlock;
     int playerBlockCount; //現在の置いたプレイヤーブロックの数
     [Header("置けるプレイヤーブロックの数")]
-    public int activationCount; //置いたプレイヤーブロックの数
-
+    public int activationCount; //発動条件
     public override void Init(Enemy enemy)
     {
         BattleManager BatM = FindFirstObjectByType<StageManager>().GetCurBattle();

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public abstract class EffectRequirement : ScriptableObject //攻撃の条件を満たしているか
+public abstract class AttackRequirement : ScriptableObject //攻撃の発動条件(条件を満たすと攻撃を行う)
 {
     protected Enemy enemy;
     public abstract void Init(Enemy enemy); //初期化

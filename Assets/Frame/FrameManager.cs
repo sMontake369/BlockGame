@@ -17,10 +17,10 @@ public class FrameManager : MonoBehaviour
     public BorderInt LFrameBorder { get => frameBorder; }
     public BorderInt WFrameBorder { get => BatM.battlePos + frameBorder; }
 
-    public void Init()
+    public void Init(BattleManager BatM)
     {
-        BatM = FindFirstObjectByType<BattleManager>();
-        GamM = FindFirstObjectByType<MainGameManager>();
+        this.BatM = BatM;
+        GamM = BatM.GamM;
         frameBorder = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(0, 0, 0));
 
         if(!BatM || !GamM) 

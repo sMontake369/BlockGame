@@ -12,15 +12,16 @@ public class AddShield : BaseEffectData
     public Color shieldColor;
     public Sprite shieldImage;
 
-    public override void Init()
+    public override void Init(Enemy enemy)
     {
+        this.enemy = enemy;
         return;
     }
 
-    public override UniTask Execute(Enemy enemy)
+    public override UniTask Execute()
     {
         BlockNumShield shield = new BlockNumShield(threshold, isLower, shieldColor, shieldImage);
-        enemy.GetComponent<Enemy>().AddShield(shield);
+        enemy.GetComponent<Enemy>().SetShield(shield);
         return UniTask.CompletedTask;
     }
 }

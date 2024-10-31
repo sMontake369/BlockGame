@@ -100,6 +100,7 @@ public class ControllerManager : MonoBehaviour
             {
                 OnGround();
             }
+            else AudM.PlayNormalSound(NormalSound.MoveBlock);
         }
         else if(value == 1) 
         {

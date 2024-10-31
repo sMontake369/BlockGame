@@ -13,6 +13,7 @@ public class EditorManager : MonoBehaviour
     public MainGameManager GamM { get; private set; }
     [HideInInspector]
     public FrameManager FraM { get; private set; }
+    public BattleManager BatM { get; private set; }
     public Vector3 mousePos;
     Camera mainCamera;
     Vector3 tmpMousePos = new Vector3(0, 0, 0);
@@ -28,8 +29,10 @@ public class EditorManager : MonoBehaviour
     {
         GamM = FindFirstObjectByType<MainGameManager>();
         FraM = FindFirstObjectByType<FrameManager>();
-        GamM.Init();
-        FraM.Init();
+        BatM = FindFirstObjectByType<BattleManager>();
+        Debug.Log("おそらくBattleManagerがない。変更した。たせ");
+        GamM.Init(BatM);
+        FraM.Init(BatM);
         mainCamera = Camera.main;
         GamM.SetEditorMode();
     }

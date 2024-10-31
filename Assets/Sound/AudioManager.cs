@@ -22,7 +22,7 @@ public class AudioManager : MonoBehaviour
     public AudioClip nextStage;
     public AudioClip stageClear;
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         SESource = this.AddComponent<AudioSource>();
         BGMSource = this.AddComponent<AudioSource>();
@@ -38,7 +38,7 @@ public class AudioManager : MonoBehaviour
         BGMSource.DOFade(endValue: 0.5f, duration: 5f);
     }
 
-    public void PlaySound(AudioClip clip)
+    void PlaySound(AudioClip clip)
     {
         SESource.PlayOneShot(clip);
     }

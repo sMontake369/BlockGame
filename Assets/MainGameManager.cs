@@ -25,9 +25,9 @@ public class MainGameManager : MonoBehaviour
 
     public MainStateType mainState { get; private set; }
 
-    public void Init()
+    public void Init(BattleManager BatM)
     {
-        BatM = FindFirstObjectByType<BattleManager>();
+        this.BatM = BatM;
         FraM = BatM.FraM;
         AttM = BatM.AttM;
         AudM = FindFirstObjectByType<StageManager>().AudM;

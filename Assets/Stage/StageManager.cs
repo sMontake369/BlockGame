@@ -5,8 +5,11 @@ using UnityEngine;
 public class StageManager : MonoBehaviour
 {
     List<BattleManager> battleList;
-    CameraManager CamM;
-    ControllerManager ConM;
+    [HideInInspector]
+    public CameraManager CamM;
+    [HideInInspector]
+    public ControllerManager ConM;
+    [HideInInspector]
     public AudioManager AudM;
 
     int battleIndex = 0;

@@ -7,7 +7,8 @@ using UnityEngine;
 public abstract class BaseEffectData : ScriptableObject
 {
     public new string name; //識別用
+    protected Enemy enemy;
 
-    public abstract void Init();
-    public abstract UniTask Execute(Enemy enemy);
+    public abstract void Init(Enemy enemy);
+    public abstract UniTask Execute();
 }

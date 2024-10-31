@@ -29,9 +29,9 @@ public class AttackManager : MonoBehaviour
     CancellationTokenSource cts;
     CancellationToken token;
 
-    public void Init()
+    public void Init(BattleManager BatM) //初期化
     {
-        BatM = FindFirstObjectByType<BattleManager>();
+        this.BatM = BatM;
         GamM = BatM.GamM;
         FraM = BatM.FraM;
         EneM = BatM.EneM;

@@ -10,15 +10,16 @@ public class IceBlockData : BaseEffectData
     MainGameManager GamM;
     FrameManager FraM;
 
-    public override void Init()
+    public override void Init(Enemy enemy)
     {
         StageManager StaM = FindFirstObjectByType<StageManager>();
         BattleManager BatM = StaM.GetCurBattle();
         GamM = BatM.GamM;
         FraM = BatM.FraM;
+        this.enemy = enemy;
     }
 
-    public override UniTask Execute(Enemy enemy)
+    public override UniTask Execute()
     {
         //ブロックを置き換えるプログラムに変更するべき
 

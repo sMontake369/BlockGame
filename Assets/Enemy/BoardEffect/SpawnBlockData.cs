@@ -14,15 +14,16 @@ public class SpawnBlockData : BaseEffectData
     FrameManager FraM;
     BattleManager BatM;
 
-    public override void Init()
+    public override void Init(Enemy enemy)
     {
         StageManager StaM = FindFirstObjectByType<StageManager>();
         BatM = StaM.GetCurBattle();
         GamM = BatM.GamM;
         FraM = BatM.FraM;
+        this.enemy = enemy;
     }
 
-    public override async UniTask Execute(Enemy enemy) //ブロックを生成
+    public override async UniTask Execute() //ブロックを生成
     {
         if(blockDataList.Count == 0) 
         {

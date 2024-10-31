@@ -29,13 +29,13 @@ public class BattleManager : MonoBehaviour
     public void Init()
     {
         StaM = transform.parent.GetComponent<StageManager>();
-        ConM = transform.parent.GetComponent<ControllerManager>();
-        CamM = FindFirstObjectByType<CameraManager>();
+        ConM = StaM.ConM;
+        CamM = StaM.CamM;
         AudM = StaM.AudM;
         
         battleState = BattleState.Pause;
 
-        if(!StaM || !ConM) 
+        if(!StaM || !ConM || !CamM || !AudM) 
         {
             Debug.Log("StageManager or ControllerManager is not found");
             return;
@@ -60,10 +60,10 @@ public class BattleManager : MonoBehaviour
         AttM.transform.SetParent(this.transform);
         AttM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
-        GamM.Init();
-        EneM.Init();
-        AttM.Init();
-        FraM.Init();
+        GamM.Init(this);
+        EneM.Init(this);
+        AttM.Init(this);
+        FraM.Init(this);
     }
 
     public void SetData(BattleData battleData)

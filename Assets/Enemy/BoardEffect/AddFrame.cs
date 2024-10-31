@@ -10,14 +10,15 @@ public class AddFrame : BaseEffectData
     public Vector3Int pos;
     FrameManager FraM;
 
-    public override void Init()
+    public override void Init(Enemy enemy)
     {
         StageManager StaM = FindFirstObjectByType<StageManager>();
         BattleManager BatM = StaM.GetCurBattle();
         FraM = BatM.FraM;
+        this.enemy = enemy;
     }
 
-    public override UniTask Execute(Enemy enemy)
+    public override UniTask Execute()
     {
         if(frameData == null) 
         {

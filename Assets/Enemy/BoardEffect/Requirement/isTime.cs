@@ -1,9 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "isTime", menuName = "EffectRequirement/CreateIsTime")]
-public class isTime : EffectRequirement
+public class isTime : AttackRequirement
 {
     float selectedTime; //選択されてからの時間
 
@@ -37,6 +38,6 @@ public class isTime : EffectRequirement
 
     public override IntervalUI GetAttackUIText()
     {
-        return new IntervalUI(activationTime, activationTime - (Time.time - selectedTime), Color.white, Color.yellow);
+        return new IntervalUI(activationTime, math.max(0, activationTime - (Time.time - selectedTime)), Color.white, Color.yellow);
     }
 }
