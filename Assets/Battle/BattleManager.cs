@@ -14,6 +14,7 @@ public class BattleManager : MonoBehaviour
     public EnemyManager EneM { get; private set; }
     public CameraManager CamM { get; private set; }
     public ControllerManager ConM { get; private set; }
+    AudioManager AudM;
 
     public BattleState battleState { get; private set; }
 
@@ -30,6 +31,7 @@ public class BattleManager : MonoBehaviour
         StaM = transform.parent.GetComponent<StageManager>();
         ConM = transform.parent.GetComponent<ControllerManager>();
         CamM = FindFirstObjectByType<CameraManager>();
+        AudM = StaM.AudM;
         
         battleState = BattleState.Pause;
 
@@ -88,8 +90,9 @@ public class BattleManager : MonoBehaviour
     {
         battleState = BattleState.Play;
         
-        CamM.SetBattleManager(this);
-        CamM.SetPosAndOrtho(battleData.cameraPos, battleData.orthoSize); //カメラの設定
+        Vector2 battlePos = this.transform.position;
+        CamM.SetPosAndOrtho(battlePos + battleData.cameraPos, battleData.orthoSize); //カメラの設定
+        AudM.PlayNormalSound(NormalSound.NextStage);
 
         await UniTask.Delay(2000); //カメラの移動待ち
 

@@ -10,6 +10,7 @@ public class ControllerManager : MonoBehaviour
     float previousTime = 0;
     MainInputAction mainInputAction;
     MainGameManager GamM;
+    AudioManager AudM;
 
     bool isMoveHold = false;
     float moveValue = 0;
@@ -36,6 +37,7 @@ public class ControllerManager : MonoBehaviour
 
         mainInputAction.Player.Hold.performed += context => OnHold();
         mainInputAction.Enable();
+        AudM = FindFirstObjectByType<StageManager>().AudM;
     }
 
     // Update is called once per frame
@@ -68,7 +70,8 @@ public class ControllerManager : MonoBehaviour
     void Move(float value) //左右移動
     {   
         if(GamM == null || GamM.playerBlock == null) return;
-        GamM.playerBlock.Transform(new Vector3Int((int)value, 0, 0));
+        bool moved = GamM.playerBlock.Transform(new Vector3Int((int)value, 0, 0));
+        if(!moved) AudM.PlayNormalSound(NormalSound.MoveBlock);
         previousTime = 0;
     }
 
@@ -83,6 +86,7 @@ public class ControllerManager : MonoBehaviour
         if(GamM == null || GamM.playerBlock == null) return;
         if(value == 1) GamM.playerBlock.Rotation(Vector3.back);
         else if(value == -1) GamM.playerBlock.Rotation(Vector3.forward);
+        AudM.PlayNormalSound(NormalSound.RotateBlock);
         previousTime = 0;
     }
 
@@ -114,6 +118,7 @@ public class ControllerManager : MonoBehaviour
 
     void OnGround() //プレイヤーブロックが地面に着地した時
     {
+        AudM.PlayNormalSound(NormalSound.OnGroundBlock);
         holdDropTime = 0;
         GamM.TurnEnd();
     }

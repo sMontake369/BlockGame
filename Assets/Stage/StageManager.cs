@@ -7,6 +7,7 @@ public class StageManager : MonoBehaviour
     List<BattleManager> battleList;
     CameraManager CamM;
     ControllerManager ConM;
+    public AudioManager AudM;
 
     int battleIndex = 0;
 
@@ -17,6 +18,7 @@ public class StageManager : MonoBehaviour
     public void Awake()
     {
         ConM = GetComponent<ControllerManager>();
+        AudM = GetComponent<AudioManager>();
         CamM = FindFirstObjectByType<CameraManager>();
 
         CamM.Init();
@@ -46,7 +48,7 @@ public class StageManager : MonoBehaviour
                 BatM.transform.position = battleList[i - 1].transform.position + offset;
             }
             BatM.transform.SetParent(this.transform);
-            BatM.transform.SetPositionAndRotation(transform.position, transform.rotation);
+            BatM.transform.rotation = transform.rotation;
             BatM.Init();
             battleList.Add(BatM);
             if(battleData) BatM.SetData(battleData);

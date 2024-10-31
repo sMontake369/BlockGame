@@ -85,3 +85,6 @@ crashlytics-build.properties
 /[Aa]ssets/Resources/
 /[Aa]ssets/Prefabs/
 /[Aa]ssets/Others/
+
+# FlatKit
+Assets/FlatKit/*

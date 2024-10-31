@@ -9,6 +9,12 @@ public class AttackRBlock : RootBlock //RAttack
     public int power { private set; get; } = 0;
     public List<ColorType> colorTypeList { private set; get; } = new List<ColorType>(); //攻撃ブロックの色のリスト
     List<Texture> textureList = new List<Texture>();
+    AudioManager AudM;
+
+    public void Start()
+    {
+        AudM = FindFirstObjectByType<StageManager>().AudM;
+    }
 
     public int edge { private set; get; } = 0; //現在の正方形の辺の長さ
     
@@ -35,8 +41,11 @@ public class AttackRBlock : RootBlock //RAttack
                 AddBlock(block, index, false);
 
                 //アニメーション
-                _ = block.transform.DOJump(transform.position + index, 5, 1, 0.7f).SetEase(Ease.OutQuint);
-                _ = block.transform.DORotate(new Vector3(-90,0,0), 1f).SetEase(Ease.InExpo);
+                _ = block.transform.DOJump(transform.position + index, 10, 1, 1f).SetEase(Ease.OutQuint);
+                _ = block.transform.DORotate(new Vector3(-90,0,0), 0.5f).SetEase(Ease.InExpo).OnComplete(() =>
+                {
+                    AudM.PlayNormalSound(NormalSound.BlockStacking);
+                });
                 await UniTask.Delay(50);
             }
         }
@@ -52,13 +61,25 @@ public class AttackRBlock : RootBlock //RAttack
     {
         int edge = Mathf.CeilToInt(Mathf.Sqrt(GetBlockNum()));
         GameObject video = Resources.Load<GameObject>("video");
-        GameObject obj = Instantiate(video, transform.position + new Vector3(edge / 2 - 0.35f, edge / 2 - 0.35f, -10), Quaternion.Euler(90,180,0));
+        GameObject obj = Instantiate(video, transform.position + new Vector3(edge / 2, edge / 2, -0.2f), Quaternion.Euler(90,180,0));
         obj.transform.localScale = new Vector3(edge / 10.0f, edge / 10.0f, edge / 10.0f);
         obj.transform.parent = transform;
-        await UniTask.Delay(2000);
+        for(int i = 0; i < 10; i++)
+        {
+            AudM.PlayNormalSound(NormalSound.Hold);
+            await UniTask.Delay(200);
+        }
+        
 
-        await transform.DOMove(enemy.transform.position + new Vector3(-5,0,0), 0.6f).SetEase(Ease.InBack,3); //-5は攻撃ブロックの原点が一番左にあるからあくまで仮の値
-        if(enemy) enemy.Damage(this);
+        _ = transform.DOMove(enemy.transform.position + new Vector3(-5,0,0), 0.6f).SetEase(Ease.InBack,3); //-5は攻撃ブロックの原点が一番左にあるからあくまで仮の値
+        await UniTask.Delay(270);
+        AudM.PlayNormalSound(NormalSound.ThrowBlock);
+        await UniTask.Delay(330);
+        if(enemy) 
+        {
+            enemy.Damage(this);
+            AudM.PlayNormalSound(NormalSound.Attack);
+        }
 
         Destroy(this.gameObject);
     }

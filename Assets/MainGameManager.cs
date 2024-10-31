@@ -11,6 +11,7 @@ public class MainGameManager : MonoBehaviour
     BattleManager BatM;
     FrameManager FraM;
     AttackManager AttM;
+    AudioManager AudM;
 
     private List<int> bagList; //袋リスト
 
@@ -27,8 +28,9 @@ public class MainGameManager : MonoBehaviour
     public void Init()
     {
         BatM = FindFirstObjectByType<BattleManager>();
-        FraM = FindFirstObjectByType<FrameManager>();
-        AttM = FindFirstObjectByType<AttackManager>();
+        FraM = BatM.FraM;
+        AttM = BatM.AttM;
+        AudM = FindFirstObjectByType<StageManager>().AudM;
 
         if(!BatM || !FraM || !AttM) 
         {
@@ -40,7 +42,6 @@ public class MainGameManager : MonoBehaviour
         bagList = new List<int>();
         generationNum = 0;
         mainState = MainStateType.idle;
-        Debug.Log(this.transform.rotation.eulerAngles);
     }
 
     /// <summary>
@@ -260,6 +261,7 @@ public class MainGameManager : MonoBehaviour
 
         colorType = maxGenBlock.colorType;
 
+        AudM.PlayNormalSound(NormalSound.Lined);
         foreach(BaseBlock baseBlock in blockList)
         {
             BaseBlock deleteBlock = baseBlock.OnDelete(); //削除
@@ -268,8 +270,8 @@ public class MainGameManager : MonoBehaviour
                 FraM.DeleteBlock(deleteBlock);
                 deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
                 deleteBlockList.Add(deleteBlock);
-                await UniTask.Delay(1);
-            } 
+            }
+            await UniTask.Delay(1);
         }
 
         // nextSearchBlockList.AddRange(maxGenBlock.RootBlock.BlockList);

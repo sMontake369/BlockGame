@@ -31,11 +31,11 @@ public class AttackManager : MonoBehaviour
 
     public void Init()
     {
-        GamM = FindFirstObjectByType<MainGameManager>();
-        FraM = FindFirstObjectByType<FrameManager>();
-        EneM = FindFirstObjectByType<EnemyManager>();
         BatM = FindFirstObjectByType<BattleManager>();
-
+        GamM = BatM.GamM;
+        FraM = BatM.FraM;
+        EneM = BatM.EneM;
+        
         AttackUI = Addressables.InstantiateAsync("AttackCanvas").WaitForCompletion().GetComponent<AttackUI>();
         AttackUI.GetComponent<Canvas>().worldCamera = Camera.main;
         AttackUI.transform.SetParent(this.transform);
