@@ -44,7 +44,6 @@ public class BlockPool : MonoBehaviour
     private RootBlock OnCreateRootBlock()
     {
         RootBlock rootBlock = new GameObject("RootBlock").AddComponent<RootBlock>();
-        rootBlock.name = "RootBlock";
         GameObject pivot = new GameObject("Pivot");
         pivot.transform.SetParent(rootBlock.transform);
         rootBlock.pivot = pivot;
@@ -69,7 +68,6 @@ public class BlockPool : MonoBehaviour
             ReleaseNotBaseBlock(block);
             rootBlock.BlockListList.Clear();
         }
-        rootBlock.pivot.transform.rotation = Quaternion.identity;
         rootBlock.transform.parent = poolObject.transform;
         rootBlock.gameObject.SetActive(false);
     }
@@ -109,7 +107,6 @@ public class BlockPool : MonoBehaviour
         
         block.transform.parent = poolObject.transform;
         block.mainRenderer.material.color = new Color(1, 1, 1, 1f);
-        block.transform.rotation = Quaternion.Euler(new Vector3(-90,0,0));
         block.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
         block.gameObject.SetActive(false);
     }

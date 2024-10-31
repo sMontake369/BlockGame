@@ -34,7 +34,7 @@ public class EnemyManager : MonoBehaviour
 
     }
 
-    public void OnKilled(Enemy enemy)
+    public void AlertKill(Enemy enemy)
     {
         enemyList.Remove(enemy);
         if(enemyList.Count == 0) BatM.ClearBattle(); 

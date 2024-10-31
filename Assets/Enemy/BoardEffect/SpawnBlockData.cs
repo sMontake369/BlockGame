@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using Cysharp.Threading.Tasks;
-using UnityEditor.SceneManagement;
 
 [CreateAssetMenu(fileName = "SpawnBlockData", menuName = "Effect/CreateSpawnBlockData")]
 public class SpawnBlockData : BaseEffectData
@@ -23,7 +22,7 @@ public class SpawnBlockData : BaseEffectData
         FraM = BatM.FraM;
     }
 
-    public override async void Execute(Enemy enemy) //ブロックを生成
+    public override async UniTask Execute(Enemy enemy) //ブロックを生成
     {
         if(blockDataList.Count == 0) 
         {
@@ -37,7 +36,7 @@ public class SpawnBlockData : BaseEffectData
             case SpawnType.RandomPos:
                 pos = new Vector3Int(Random.Range(0, FraM.LFrameBorder.width), Random.Range(0, FraM.LFrameBorder.height - 8), 0);
                 break;
-            case SpawnType.FromSpawnPos:
+            case SpawnType.Drop:
                 pos = new Vector3Int(Random.Range(0, FraM.LFrameBorder.width), BatM.battleData.blockSpawnPos.y, 0);
                 break;
             case SpawnType.SandBlock:
@@ -98,7 +97,7 @@ public class SpawnBlockData : BaseEffectData
 
         FraM.SetRBlock(rootBlock);
 
-        if(spawnType == SpawnType.FromSpawnPos)
+        if(spawnType == SpawnType.Drop)
         {
             int downNum = 0;
             while(!rootBlock.Transform(Vector3Int.down))
@@ -118,6 +117,6 @@ public class SpawnBlockData : BaseEffectData
 public enum SpawnType
 {
     RandomPos,
-    FromSpawnPos,
+    Drop,
     SandBlock
 }

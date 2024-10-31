@@ -46,6 +46,7 @@ public class StageManager : MonoBehaviour
                 BatM.transform.position = battleList[i - 1].transform.position + offset;
             }
             BatM.transform.SetParent(this.transform);
+            BatM.transform.SetPositionAndRotation(transform.position, transform.rotation);
             BatM.Init();
             battleList.Add(BatM);
             if(battleData) BatM.SetData(battleData);

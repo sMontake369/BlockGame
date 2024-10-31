@@ -24,15 +24,6 @@ public class AttackUI : MonoBehaviour
             .OnUpdate(() => powerText.text = nowNumber.ToString());
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        if(AttM.AttackTime > 0)
-        {
-            attackTimeSlider.value = AttM.AttackTime;
-        }
-    }
-
     public void SetPos(int edge)
     {
         float centerPos = edge * 20 / 2.0f;

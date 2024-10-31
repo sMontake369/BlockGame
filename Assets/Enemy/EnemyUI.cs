@@ -19,26 +19,22 @@ public class EnemyUI : MonoBehaviour
     Color maxColor = new Color(0.65f, 1, 0.25f, 1);
     Color minColor = new Color(1, 0.2f, 0.1f, 1);
 
-    public void Generate(string name, int? hp = null, float? interval = null)
+    public void Init(string name, int? hp = null)
     {
         enemyName.text = name;
+        attackInterval.enabled = true;
         if(hp != null)
         {
             hpBar.gameObject.SetActive(true);
             hpBar.maxValue = (float)hp;
             hpBar.value = (float)hp;
         }
-        if(interval != null)
-        {
-            attackInterval.enabled = true;
-            attackInterval.text = ((int)Mathf.Ceil((float)interval)).ToString();
-        }
     }
 
     public async UniTask SetHP(int hp) //HPを設定
     {
         await hpBar.DOValue(hp, 0.5f).SetEase(Ease.InOutQuint).OnUpdate(() => hpBarImage.color = Color.Lerp(minColor, maxColor, hp / hpBar.maxValue));  
-        
+        await UniTask.Delay(100);
     }
 
     public void SetInterval(IntervalUI intervalUI) //攻撃間隔を設定
@@ -53,7 +49,7 @@ public class EnemyUI : MonoBehaviour
         }
     }
 
-    public void EnableShield(Sprite sprite, Color color, string text)
+    public void SetShield(Sprite sprite, Color color, string text)
     {
         ShieldImage.gameObject.SetActive(true);
         ShieldText.text = text;

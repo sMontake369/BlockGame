@@ -26,9 +26,12 @@ public class BlockEditor : MonoBehaviour
     Texture selectedTexture;
     RootBlockData selectedBlockData;
 
+    GameObject panelObj;
+
     void Start()
     {
         EdiM = FindFirstObjectByType<EditorManager>();
+
         //ColorTypeのドロップダウンリストを作成
         foreach (ColorType Value in Enum.GetValues(typeof(ColorType))) 
         colorTypeDropdown.options.Add(new TMP_Dropdown.OptionData(Enum.GetName(typeof(ColorType), Value)));
@@ -36,7 +39,7 @@ public class BlockEditor : MonoBehaviour
         colorTypeDropdown.RefreshShownValue();
 
         blockDataDropdown.options.Add(new TMP_Dropdown.OptionData("選択"));
-        foreach(RootBlockData blockData in blockShapeData.blockDataList)
+        foreach (RootBlockData blockData in blockShapeData.blockDataList)
         blockDataDropdown.options.Add(new TMP_Dropdown.OptionData(blockData.name));
         colorTypeDropdown.value = 0;
         blockDataDropdown.RefreshShownValue();
@@ -45,8 +48,7 @@ public class BlockEditor : MonoBehaviour
         List<Texture2D> texture2DList = EditorManager.GetAddressableAsset<Texture2D>("Texture2D");
         foreach (var texture2D in texture2DList)
         {
-            RawImage image = new GameObject().AddComponent<RawImage>();
-            image.name = texture2D.name;
+            RawImage image = new GameObject(texture2D.name).AddComponent<RawImage>();
             image.transform.SetParent(textureContentsObj.transform);
             image.texture = texture2D;
             image.rectTransform.localScale = new Vector3(1, 1, 1);
@@ -60,13 +62,19 @@ public class BlockEditor : MonoBehaviour
         selectedTexture = texture2DList[0];
 
         //frameの生成
-        Vector2Int vector2Int = new Vector2Int(12, 12);
-        EdiM.FraM.EditFrame(vector2Int);
-        EdiM.GeneratePanel(vector2Int);
+        Vector2Int frameSize = new Vector2Int(12, 12);
+        EdiM.FraM.SetFrame(EdiM.MakeFrameData(frameSize));
+        panelObj = EdiM.GeneratePanel(frameSize);
 
         //rootBlockの生成
         rootBlock = EdiM.GamM.GenerateRBlock();
     }
+
+    /// <summary>
+    /// sizeの大きさのFrameDataを生成。テクスチャは空(空=-1)で初期化
+    /// </summary>
+    /// <param name="size">Frameのサイズ</param>
+    /// <returns>FrameData</returns>
 
     public void Update()
     {
@@ -80,8 +88,6 @@ public class BlockEditor : MonoBehaviour
         }
         else if(mode == BlockEditMode.generateBlock) screenPos = Vector3Int.RoundToInt(EdiM.mousePos);
         else return;
-        screenPos.z = 0;
-        EdiM.pointerObj.transform.position = screenPos;
 
         //左クリック時の処理
         if(Input.GetMouseButton(0)) OnLeftClick();
@@ -108,8 +114,8 @@ public class BlockEditor : MonoBehaviour
 
     void GenerateBlock()
     {
-        Vector3Int pos = Vector3Int.RoundToInt(screenPos);
-        if(EdiM.FraM.GetBlock(pos) == null)
+        Vector3Int pos = Vector3Int.RoundToInt(screenPos - panelObj.transform.position);
+        if(EdiM.FraM.IsWithinBoard(pos) && EdiM.FraM.GetBlock(pos) == null)
         {
             BaseBlock block = EdiM.GamM.GenerateBlock(BlockType.Mino, (ColorType)colorTypeDropdown.value, selectedTexture);
             block.mainRenderer.material.mainTexture = selectedTexture; //2度手間、いつか直す

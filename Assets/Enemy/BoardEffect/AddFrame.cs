@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "AddFrame", menuName = "Effect/AddFrameData")]
@@ -16,13 +17,14 @@ public class AddFrame : BaseEffectData
         FraM = BatM.FraM;
     }
 
-    public override void Execute(Enemy enemy)
+    public override UniTask Execute(Enemy enemy)
     {
         if(frameData == null) 
         {
             Debug.LogError("フレームデータが設定されていません");
-            return;
+            return UniTask.CompletedTask;
         }
         FraM.AddFrame(pos, frameData, true);
+        return UniTask.CompletedTask;
     }
 }

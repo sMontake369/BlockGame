@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "IceBlockData", menuName = "Effect/CreateIceBlockData")]
@@ -17,7 +18,7 @@ public class IceBlockData : BaseEffectData
         FraM = BatM.FraM;
     }
 
-    public override void Execute(Enemy enemy)
+    public override UniTask Execute(Enemy enemy)
     {
         //ブロックを置き換えるプログラムに変更するべき
 
@@ -36,5 +37,6 @@ public class IceBlockData : BaseEffectData
         //         GamM.BlockConvert<IceBlock>(boardList[y][x]);
         //     }
         // }
+        return UniTask.CompletedTask;
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "AddShield", menuName = "Effect/CreateAddShield")]
@@ -16,10 +17,11 @@ public class AddShield : BaseEffectData
         return;
     }
 
-    public override void Execute(Enemy enemy)
+    public override UniTask Execute(Enemy enemy)
     {
         BlockNumShield shield = new BlockNumShield(threshold, isLower, shieldColor, shieldImage);
         enemy.GetComponent<Enemy>().AddShield(shield);
+        return UniTask.CompletedTask;
     }
 }
 

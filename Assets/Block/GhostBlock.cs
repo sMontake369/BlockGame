@@ -101,6 +101,8 @@ public class GhostBlock : RootBlock
         for(int x = 0; x < BlockListList[y].Count; x++)
         {
             if(BlockListList[y][x] == null || rootBlock.BlockListList[y][x] == null) continue;
+            BlockListList[y][x].transform.position = rootBlock.BlockListList[y][x].transform.position;
+            BlockListList[y][x].transform.rotation = rootBlock.BlockListList[y][x].transform.rotation;
             BlockListList[y][x].frameIndex = rootBlock.BlockListList[y][x].frameIndex;
         }
     }

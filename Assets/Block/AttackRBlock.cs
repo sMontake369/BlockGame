@@ -3,20 +3,49 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using Cysharp.Threading.Tasks;
-using UnityEngine.UI;
-using Unity.Collections;
 
 public class AttackRBlock : RootBlock //RAttack
 {   
-    int power;
-    public int Power { get => power; }
-    List<ColorType> colorTypeList = new List<ColorType>();
-    public List<ColorType> ColorType { get => colorTypeList;}
+    public int power { private set; get; } = 0;
+    public List<ColorType> colorTypeList { private set; get; } = new List<ColorType>(); //攻撃ブロックの色のリスト
     List<Texture> textureList = new List<Texture>();
 
-    public void AddPower(int power)
+    public int edge { private set; get; } = 0; //現在の正方形の辺の長さ
+    
+    public bool CanSquire(int blockNum)
     {
-        this.power += power;
+        int needBlockNum = (edge + 1) * (edge + 1) - edge * edge;
+        return blockNum >= needBlockNum;
+    }
+
+    public async UniTask SetSquire(List<BaseBlock> blockList)
+    {
+        int x;
+        for(int y = 0; y <= edge; y++)
+        {
+            if(y < edge) x = edge;
+            else x = 0;
+            for(; x <= edge; x++)
+            {
+                BaseBlock block = blockList[0];
+                blockList.RemoveAt(0);
+                block.transform.DOKill();
+
+                Vector3Int index = new Vector3Int(x, y, 0); //正方形に配置する座標
+                AddBlock(block, index, false);
+
+                //アニメーション
+                _ = block.transform.DOJump(transform.position + index, 5, 1, 0.7f).SetEase(Ease.OutQuint);
+                _ = block.transform.DORotate(new Vector3(-90,0,0), 1f).SetEase(Ease.InExpo);
+                await UniTask.Delay(50);
+            }
+        }
+        edge++;
+    }
+
+    public void AddPower(int blockNum, int lineNum) 
+    {
+        this.power += Mathf.FloorToInt(blockNum * lineNum * (0.5f + 0.5f * lineNum));
     }
 
     public async void Attack(Enemy enemy)
@@ -34,7 +63,7 @@ public class AttackRBlock : RootBlock //RAttack
         Destroy(this.gameObject);
     }
 
-    public void ToOneBlock()
+    void ToOneBlock()
     {
         foreach(BaseBlock block in BlockList)
         {

@@ -15,7 +15,7 @@ public class SandBlock : RootBlock
             foreach(BaseBlock baseBlock in BlockList) if(!baseBlock.canMove) return; //移動できないブロックがある場合
             if(FraM.IsConflict(this, Vector3Int.down)) 
             {
-                if(this == GamM.playerBlock) GamM.SetNextPlayerBlock();
+                if(this == GamM.playerBlock) GamM.TurnEnd();
                 return;
             }
             await Fall();

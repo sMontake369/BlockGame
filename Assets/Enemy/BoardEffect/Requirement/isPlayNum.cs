@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "isPlayNum", menuName = "Effect/CreateIsPlayNum")]
+[CreateAssetMenu(fileName = "isPlayNum", menuName = "EffectRequirement/CreateIsPlayNum")]
 public class isPlayNum : EffectRequirement
 {
     MainGameManager GamM;
@@ -11,10 +11,11 @@ public class isPlayNum : EffectRequirement
     [Header("置けるプレイヤーブロックの数")]
     public int activationCount; //置いたプレイヤーブロックの数
 
-    public override void Init()
+    public override void Init(Enemy enemy)
     {
         BattleManager BatM = FindFirstObjectByType<StageManager>().GetCurBattle();
         GamM = BatM.GamM;
+        this.enemy = enemy;
         playerBlockCount = 0;
     }
 

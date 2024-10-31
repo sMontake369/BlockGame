@@ -10,7 +10,7 @@ public class DamageUI : MonoBehaviour
     public TextMeshProUGUI damageText;
     public Image weakImage;
 
-    public void Active(Enemy enemy, int damage, bool isWeak)
+    public void Generate(Enemy enemy, int damage, bool isWeak)
     {
         GetComponent<Canvas>().worldCamera = Camera.main;
         transform.SetParent(enemy.transform);

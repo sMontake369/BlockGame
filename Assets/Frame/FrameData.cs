@@ -9,7 +9,7 @@ public class FrameData : ScriptableObject
     [Header("フレームのサイズ")]
     public Vector3Int frameSize;
 
-    [Header("ブロックが移動できるかとブロックの情報")] //サイズはlength、設置負荷の場合は0,ブロックの情報は1~割り当てる。
+    [Header("ブロックが移動できるかとブロックの情報")] //サイズはlength、設置負荷の場合は-2,何もない場合は-1,ブロックの情報は0~割り当てる。
     public List<int> indexDataList;
 
     [Header("ブロックの情報とテクスチャのリスト")]
@@ -23,6 +23,13 @@ public class BlockData //ブロックの情報とindexを紐づける
     public BlockType blockType;
     public ColorType colorType;
     public Texture texture;
+
+    public BlockData(BlockType blockType = default, ColorType colorType = default, Texture texture = default)
+    {
+        this.blockType = blockType;
+        this.colorType = colorType;
+        this.texture = texture;
+    }
 }
 
 [System.Serializable]

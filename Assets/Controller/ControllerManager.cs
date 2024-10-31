@@ -115,7 +115,7 @@ public class ControllerManager : MonoBehaviour
     void OnGround() //プレイヤーブロックが地面に着地した時
     {
         holdDropTime = 0;
-        GamM.SetNextPlayerBlock();
+        GamM.TurnEnd();
     }
 
     void HoldDrop(float value, bool performed)

@@ -1,10 +1,10 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
 using DG.Tweening;
 using System.Linq;
+using UnityEngine.UIElements;
 
 public class MainGameManager : MonoBehaviour
 {
@@ -12,13 +12,15 @@ public class MainGameManager : MonoBehaviour
     FrameManager FraM;
     AttackManager AttM;
 
-    private List<int> bagList = new List<int>();
+    private List<int> bagList; //袋リスト
 
     public RootBlock playerBlock { get; private set; } //プレイヤーブロック
     RootBlock holdBlock; //ホールドブロック
 
-    List<RootBlock> nextRBlockList = new List<RootBlock>(); //ネクストブロックリスト
-    int generationNum = 0; //ブロックの世代数
+    List<RootBlock> nextRBlockList; //ネクストブロックリスト
+    int generationNum; //ブロックの世代数
+    bool isLined; //このターンで列が揃ったか
+
 
     public MainStateType mainState { get; private set; }
 
@@ -34,42 +36,62 @@ public class MainGameManager : MonoBehaviour
             return;
         }
         
-        bagList.Clear();
+        nextRBlockList = new List<RootBlock>();
+        bagList = new List<int>();
         generationNum = 0;
         mainState = MainStateType.idle;
+        Debug.Log(this.transform.rotation.eulerAngles);
     }
 
-    public void SetNextPlayerBlock() //次のプレイヤーブロックを生成
+    /// <summary>
+    /// 次のターンを開始
+    /// </summary>
+    public void TurnStart()
     {
-        if(playerBlock) playerBlock.DestroyGhostBlock();
-        playerBlock = null;
-
         mainState = MainStateType.running;
+        isLined = false;
 
         playerBlock = GetNextBlock();
-        playerBlock.transform.position = this.transform.position + BatM.battleData.blockSpawnPos;
+        playerBlock.transform.localPosition = BatM.battleData.blockSpawnPos;
 
-        foreach(List<BaseBlock> baseBlockList in playerBlock.BlockListList)
-        foreach(BaseBlock baseBlock in baseBlockList)
-        if(baseBlock != null) baseBlock.frameIndex = BatM.battleData.blockSpawnPos + baseBlock.shapeIndex;
 
-        FraM.SetRBlock(playerBlock);
+        foreach(BaseBlock baseBlock in playerBlock.BlockList)
+        baseBlock.frameIndex = BatM.battleData.blockSpawnPos + baseBlock.shapeIndex;
 
-        if(FraM.IsConflict(playerBlock, Vector3Int.zero)) 
+        if(!FraM.SetRBlock(playerBlock)) 
         {
             Debug.Log("ゲームオーバー");
             return;
         }
     }
 
+    /// <summary>
+    /// プレイヤーブロックの操作を終了し、ターン終了する
+    /// </summary>
+    public void TurnEnd()
+    {
+        if(playerBlock) playerBlock.DestroyGhostBlock();
+        playerBlock = null;
+        CheckLine(); //playerBlockは列の判定対象外のため、nullにしてからでないと、列が揃っているか判定できない
+
+        if(!isLined) AttM.Attack(); //攻撃
+
+        TurnStart();
+    }
+
+    /// <summary>
+    /// プレイヤーブロックを生成できるだけ生成し、ネクストブロックを取得
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
     public RootBlock GetNextBlock(int index = 0) //ネクストブロックを取得
     {
         if(BatM.battleData.nextBlockPosList.Count < index) return null; //index個目のネクストブロックがない場合、nullを返す
         RootBlock nextRBlock;
-        if(nextRBlockList.Count <= index) //数が足りない場合、新たに生成
+        if(nextRBlockList.Count <= index) //ブロックの数が足りない場合、新たに生成
         {
             nextRBlockList.Add(GenerateRBlock(BatM.blockShapeData.blockDataList[GetRandomInt()]));
-            nextRBlockList.Last().transform.position = this.transform.position + BatM.battleData.nextBlockPosList.Last() + new Vector3(0, 0, -10);
+            nextRBlockList.Last().transform.localPosition = BatM.battleData.nextBlockPosList.Last() + new Vector3(0, 0, -10);
         }
         if(nextRBlockList[index] != null) nextRBlock = nextRBlockList[index]; //ほしい奴
         else nextRBlock = GetNextBlock(index + 1); //ほしい奴がない場合、次の奴を取得
@@ -78,7 +100,7 @@ public class MainGameManager : MonoBehaviour
         if(nextNextRBlock != null)
         {
             nextNextRBlock.transform.DOKill();
-            nextNextRBlock.transform.DOJump(this.transform.position + BatM.battleData.nextBlockPosList[index],0.5f,1,0.3f);
+            nextNextRBlock.transform.DOLocalJump(BatM.battleData.nextBlockPosList[index], 0.5f, 1, 0.3f);
             nextRBlockList[index] = nextNextRBlock;
         }
         nextRBlockList.Remove(nextRBlock);
@@ -86,11 +108,19 @@ public class MainGameManager : MonoBehaviour
         return nextRBlock;
     }
 
-    public RootBlock GenerateRBlock(RootBlockData blockData = null) //ルートブロックを生成
+    /// <summary>
+    /// ルートブロックを生成
+    /// いつかblockDataがnullの場合はランダムに生成にしたい
+    /// </summary>
+    /// <param name="blockData"></param>
+    /// <returns></returns>
+    public RootBlock GenerateRBlock(RootBlockData blockData = null)
     {
         RootBlock rootBlock = BlockPool.Instance.rootPool.Get();
         rootBlock.name = "RootBlock";
+        rootBlock.blockData = blockData;
         rootBlock.transform.parent = this.transform;
+        rootBlock.transform.rotation = BatM.transform.rotation;
         rootBlock.generationNum = generationNum++;
         rootBlock.Init(this, FraM);
 
@@ -105,6 +135,13 @@ public class MainGameManager : MonoBehaviour
         return rootBlock;
     }
 
+    /// <summary>
+    /// ベースブロックを生成
+    /// </summary>
+    /// <param name="blockType"></param>
+    /// <param name="colorType"></param>
+    /// <param name="texture"></param>
+    /// <returns></returns>
     public BaseBlock GenerateBlock(BlockType blockType, ColorType colorType, Texture texture)
     {
         BaseBlock block = BlockPool.Instance.blockPool.Get();
@@ -112,30 +149,21 @@ public class MainGameManager : MonoBehaviour
         block.blockType = blockType;
         block.colorType = colorType;
         block.mainRenderer.material.mainTexture = texture;
+        block.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 180) + BatM.transform.rotation.eulerAngles);
         return block;
     }
 
     int GetRandomInt() //袋からランダムに数を返す
     {
-        int count = 0;
-        int random;
-        while(true) 
-        {
-            random = Random.Range(0, BatM.blockShapeData.blockDataList.Count);
-            if(!bagList.Contains(random))
-            {
-                bagList.Add(random);
-                break;
-            }
-            count++;
-            if(count > 100) 
-            {
-                Debug.Log("無限ループ");
-                break;
-            }
+        if(bagList.Count == 0) {
+            bagList.Clear();
+            for(int i = 0; i < BatM.blockShapeData.blockDataList.Count; i++) bagList.Add(i);
         }
-        if(bagList.Count >= BatM.blockShapeData.blockDataList.Count) bagList.Clear();
-        return random;
+
+        int random = Random.Range(0, bagList.Count);
+        int num = bagList[random];
+        bagList.RemoveAt(random);
+        return num;
     }
 
     public void SetHoldBlock()
@@ -144,9 +172,9 @@ public class MainGameManager : MonoBehaviour
         {
             FraM.DeleteRBlock(playerBlock);
             holdBlock = playerBlock;
-            holdBlock.transform.position = this.transform.position + BatM.battleData.holdBlockPos;
+            holdBlock.transform.position = BatM.transform.position + BatM.battleData.holdBlockPos;
             holdBlock.pivot.transform.rotation = Quaternion.identity;
-            SetNextPlayerBlock();
+            TurnEnd();
         }
         else
         {
@@ -160,7 +188,7 @@ public class MainGameManager : MonoBehaviour
             if(baseBlock != null) baseBlock.frameIndex = FraM.LFrameBorder.lowerLeft + Vector3Int.RoundToInt(holdBlock.transform.position) + baseBlock.shapeIndex;
 
             playerBlock.transform.position = holdBlock.transform.position;
-            holdBlock.transform.position = this.transform.position + BatM.battleData.holdBlockPos;
+            holdBlock.transform.position = BatM.transform.position + BatM.battleData.holdBlockPos;
             holdBlock.pivot.transform.rotation = Quaternion.identity;
 
             FraM.SetRBlock(playerBlock);
@@ -172,26 +200,30 @@ public class MainGameManager : MonoBehaviour
         if(mainState != MainStateType.running) return;
         mainState = MainStateType.checkLine;
         List<int> lineList = new List<int>();
+        bool canDelete;
+
         for(int y = FraM.LFrameBorder.lowerLeft.y; y <= FraM.LFrameBorder.upperRight.y; y++)
         {
-            bool isLine = true;
-            bool canDelete = false;
+            canDelete = false;
 
             for(int x = FraM.LFrameBorder.lowerLeft.x; x <= FraM.LFrameBorder.upperRight.x; x++)
             {
                 BaseBlock baseBlock = FraM.GetBlock(new Vector3Int(x, y, 0));
-                if(baseBlock == null)
+                if(baseBlock == null || baseBlock.RootBlock == playerBlock) 
                 {
-                    isLine = false;
+                    canDelete = false;
                     break;
                 }
                 if(baseBlock.blockType == BlockType.Mino) canDelete = true;
             }
-            if(canDelete && isLine) lineList.Add(y);
+            if(canDelete) lineList.Add(y);
         }
-        if(lineList.Count > 0 && mainState == MainStateType.checkLine) DeleteLine(lineList);
-        else if(mainState != MainStateType.checkLine) return;
-        else mainState = MainStateType.running;
+        if(lineList.Count > 0) 
+        {
+            isLined = true;
+            DeleteLine(lineList);
+        }
+        else if(mainState == MainStateType.checkLine) mainState = MainStateType.running;
     }
 
     async void DeleteLine(List<int> lineList) //ラインを消す
@@ -227,54 +259,71 @@ public class MainGameManager : MonoBehaviour
         }
 
         colorType = maxGenBlock.colorType;
-        nextSearchBlockList.AddRange(maxGenBlock.RootBlock.BlockList);
 
-        int count = 0;
-        while(nextSearchBlockList.Count > 0) //隣接するブロックがなくなるまで探索
+        foreach(BaseBlock baseBlock in blockList)
         {
-            await UniTask.Delay(3);
-            /*
-            baseBlock.OnDelete()内のrootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
-            を実行する前に1ms以上待機しないと、SetRBlock内でCheckLine()を実行するときに、クラッシュする
-            */
-            foreach(BaseBlock baseBlock in nextSearchBlockList) 
+            BaseBlock deleteBlock = baseBlock.OnDelete(); //削除
+            if(deleteBlock != null)
             {
-                BaseBlock deleteBlock = baseBlock.OnDelete(); //削除　　　<- ここ
-                if(deleteBlock != null)
-                {
-                    FraM.DeleteBlock(deleteBlock);
-                    deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
-                    deleteBlockList.Add(deleteBlock);
-                }
-            }
-
-            curSearchBlockList.Clear();
-            curSearchBlockList.AddRange(nextSearchBlockList); //次に探索するブロックリストを現在の探索ブロックリストに変更
-            nextSearchBlockList.Clear();
-
-            foreach(BaseBlock baseBlock in curSearchBlockList)
-            {
-                if(baseBlock == null) continue;
-                foreach(Vector3Int neighborIndex in neighborIndexList)
-                {
-                    Vector3Int searchIndex = baseBlock.frameIndex + neighborIndex;
-                    if(!lineList.Contains(searchIndex.y)) continue; //削除するラインに含まれているかどうか
-
-                    BaseBlock searchBlock = FraM.GetBlock(searchIndex); //隣接するブロックを取得
-                    if(searchBlock == null) continue;
-                    if(searchBlock.blockType == BlockType.Mino && !deleteBlockList.Contains(searchBlock)) //削除するブロックリストに含まれているかどうか
-                    nextSearchBlockList.Add(searchBlock);
-                }
-            }
-            count++;
-            if(count > 100) 
-            {
-                Debug.Log("無限ループ");
-                break;
+                FraM.DeleteBlock(deleteBlock);
+                deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
+                deleteBlockList.Add(deleteBlock);
+                await UniTask.Delay(1);
             } 
         }
 
-        if(mainState != MainStateType.idle) AttM.AddAttackQueue(deleteBlockList); //攻撃ブロックを生成
+        // nextSearchBlockList.AddRange(maxGenBlock.RootBlock.BlockList);
+
+
+        // int count = 0;
+        // while(nextSearchBlockList.Count > 0) //隣接するブロックがなくなるまで探索
+        // {
+        //     await UniTask.Delay(3);
+        //     /*
+        //     baseBlock.OnDelete()内のrootBlock.BlockListList[shapeIndex.y][shapeIndex.x] = null;
+        //     を実行する前に1ms以上待機しないと、SetRBlock内でCheckLine()を実行するときに、クラッシュする
+        //     */
+        //     foreach(BaseBlock baseBlock in nextSearchBlockList) 
+        //     {
+        //         BaseBlock deleteBlock = baseBlock.OnDelete(); //削除　　　<- ここ
+        //         if(deleteBlock != null)
+        //         {
+        //             FraM.DeleteBlock(deleteBlock);
+        //             deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
+        //             deleteBlockList.Add(deleteBlock);
+        //         }
+        //     }
+
+        //     curSearchBlockList.Clear();
+        //     curSearchBlockList.AddRange(nextSearchBlockList); //次に探索するブロックリストを現在の探索ブロックリストに変更
+        //     nextSearchBlockList.Clear();
+
+        //     foreach(BaseBlock baseBlock in curSearchBlockList)
+        //     {
+        //         if(baseBlock == null) continue;
+        //         foreach(Vector3Int neighborIndex in neighborIndexList)
+        //         {
+        //             Vector3Int searchIndex = baseBlock.frameIndex + neighborIndex;
+        //             if(!lineList.Contains(searchIndex.y)) continue; //削除するラインに含まれているかどうか
+
+        //             BaseBlock searchBlock = FraM.GetBlock(searchIndex); //隣接するブロックを取得
+        //             if(searchBlock == null) continue;
+        //             if(searchBlock.blockType == BlockType.Mino && !deleteBlockList.Contains(searchBlock)) //削除するブロックリストに含まれているかどうか
+        //             nextSearchBlockList.Add(searchBlock);
+        //         }
+        //     }
+        //     count++;
+        //     if(count > 100) 
+        //     {
+        //         Debug.Log("無限ループ");
+        //         break;
+        //     } 
+        // }
+
+        if(mainState != MainStateType.idle) 
+        {
+            AttM.AddAttackQueue(deleteBlockList, lineList.Count); //攻撃ブロックを生成
+        }
         RowDown(lineList);
     }
 
@@ -298,6 +347,8 @@ public class MainGameManager : MonoBehaviour
 
     public void ResetBlock() //コントロールブロックを破棄
     {
+        mainState = MainStateType.idle;
+        
         if(playerBlock != null) 
         {
             playerBlock.DestroyGhostBlock();
@@ -309,8 +360,6 @@ public class MainGameManager : MonoBehaviour
         foreach(RootBlock rootBlock in nextRBlockList)
         if(rootBlock != null) BlockPool.ReleaseNotRootBlock(rootBlock);
         nextRBlockList.Clear();
-
-        mainState = MainStateType.idle;
     }
 
     public T BlockConvert<T>(BaseBlock oldBlock) where T : BaseBlock

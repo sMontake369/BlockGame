@@ -30,19 +30,6 @@ public class FrameManager : MonoBehaviour
         }
     }
 
-    public void EditFrame(Vector2Int size) //Editor用のフレームを生成 いつか下のGenerateと統合したい
-    {
-        // if(frameBox) frameBox.Destroy();
-        
-        // frameData = ScriptableObject.CreateInstance<FrameData>();
-        // frameBox = new GameObject("FrameRBlock").AddComponent<FrameBox>();
-        // frameBox.SetBlock(GamM.GenerateRBlock());
-        // //frameRBlock.SetBlockSize(size); よくないかも
-        // frameBox.transform.parent = this.transform;
-        // frameBox.name = "RootFrameBlock";
-        // LMovableBorder = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(size.x, size.y, 0));
-    }
-
     List<List<FrameBox>> GenerateFrame(FrameData frameData) //フレームを生成
     {
         List<List<FrameBox>> newFrameListList = new List<List<FrameBox>>();
@@ -71,7 +58,7 @@ public class FrameManager : MonoBehaviour
         return newFrameListList;
     }
 
-    public Vector3Int SetFrame(FrameData frameData)
+    public Vector3Int SetFrame(FrameData frameData) //いつかframeのクラスを作成し、それを返すようにしたい
     {
         DeleteAllFrame();
 
@@ -80,7 +67,7 @@ public class FrameManager : MonoBehaviour
         for(int x = 0; x < frameListList[y].Count; x++)
         {
             if(!frameListList[y][x].IsContain()) continue;
-            frameListList[y][x].BaseBlock.transform.position = this.transform.position + new Vector3(x, y, 0);
+            frameListList[y][x].BaseBlock.transform.localPosition = this.transform.localPosition + new Vector3(x, y, 0);
         }
         Vector3Int frameSize = new Vector3Int(frameListList[0].Count, frameListList.Count, 0);
         frameBorder.SetMinMax(Vector3Int.zero, frameSize - new Vector3Int(1, 1, 0)); //配列は0から始まるので-1

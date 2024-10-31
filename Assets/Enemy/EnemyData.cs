@@ -37,10 +37,10 @@ public class EnemySkill
     [JsonIgnore]
     public bool IsAttack { get { return requirement.isAttack(); } }
 
-    public void Init()
+    public void Init(Enemy enemy)
     {
         foreach(BaseEffectData effect in boardEffectList) effect.Init();
-        requirement.Init();
+        requirement.Init(enemy);
     }
 }
 

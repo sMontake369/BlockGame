@@ -1,173 +1,175 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
 
 public class Enemy : MonoBehaviour
 {
-    new string name;
-    public string Name { get { return name; } }
-    int hp;
-    public int HP { get { return hp; } }
-    List<EnemySkill> enemySkillList;
-    EnemySkill nextSkill;
-    public List<InitSkill> InitSkillList;
-    float attackTimer;
-    public bool canAttack = false;
-    public bool isAlive = true;
-    EnemyUI enemyUI;
-    EnemyManager EneM;
+    public new string name { get; private set; }
+    public int maxHp { get; private set; } //HPの最大値;
+    public int hp { get; private set; } //現在のHP
+    List<EnemySkill> skillList; //スキルリスト
+    List<InitSkill> InitSkillList; //初期スキルリスト
+    EnemySkill nextSkill; //次に発動するスキル
     List<Shield> shieldList = new List<Shield>();
     List<ColorType> weakColorList = new List<ColorType>();
+
+    public bool attackNow = false;
+    public bool isAlive = true;
+
+    EnemyUI enemyUI;
+    EnemyManager EneM;
 
     public void Awake()
     {
         EneM = FindFirstObjectByType<EnemyManager>();
-
-        GameObject enemyCanvas = Addressables.InstantiateAsync("EnemyCanvas").WaitForCompletion();
-        //ここはInit関数を作り、そこで生成するように変更する
-        enemyCanvas.name = "EnemyCanvas";
-        enemyCanvas.transform.SetParent(this.transform);
-        enemyCanvas.transform.position = this.transform.position + new Vector3(0,0,0);
-        enemyCanvas.GetComponent<Canvas>().worldCamera = Camera.main;
-        //ここまで
-        enemyUI = enemyCanvas.GetComponent<EnemyUI>();
     }
 
     public void Init(EnemyData enemyData) //初期化
     {
-        hp = enemyData.hp;
+        maxHp = enemyData.hp;
+        hp = maxHp;
         name = enemyData.name;
-        enemySkillList = new List<EnemySkill>(enemyData.skillList);
+        skillList = new List<EnemySkill>(enemyData.skillList);
         InitSkillList = enemyData.InitSkillList;
         weakColorList = enemyData.weakColorList;
         this.name = enemyData.name;
 
-        canAttack = false;
-
-        if(enemySkillList.Count > 0)
+        if(skillList.Count > 0)
         {
-            nextSkill = enemySkillList[UnityEngine.Random.Range(0, enemySkillList.Count)];
+            nextSkill = skillList[UnityEngine.Random.Range(0, skillList.Count)];
         }
 
-        enemyUI.Generate(name, hp, attackTimer);
+        GameObject enemyCanvas = Addressables.InstantiateAsync("EnemyCanvas").WaitForCompletion();
+        enemyCanvas.name = "EnemyCanvas";
+        enemyCanvas.transform.SetParent(this.transform);
+        enemyCanvas.transform.position = this.transform.position + new Vector3(0,0,0);
+        enemyCanvas.GetComponent<Canvas>().worldCamera = Camera.main;
+        enemyUI = enemyCanvas.GetComponent<EnemyUI>();
+        enemyUI.Init(name, hp);
         this.gameObject.SetActive(false);
     }
 
-    public void PlayEnemy()
+    /// <summary>
+    /// 敵の行動を開始
+    /// </summary>
+    public async void PlayEnemy()
     {
-        foreach(InitSkill skill in InitSkillList) skill.boardEffect.Execute(this);
+        foreach(EnemySkill skill in skillList) 
+        {
+            skill.Init(this);
+            if(skill.isImmediately) skill.requirement.isSelected();
+        }
 
-        foreach(EnemySkill skill in enemySkillList) skill.Init();
-        nextSkill = GetNextSkill();
+        foreach(InitSkill skill in InitSkillList) await skill.boardEffect.Execute(this);
+
+        nextSkill = GetRandomSkill();
         if(nextSkill != null)
         {
             nextSkill.requirement.isSelected();
             enemyUI.SetInterval(nextSkill.requirement.GetAttackUIText());
         }
-        canAttack = true;
     }
 
     public void AddShield(Shield shield)
     {
         shieldList.Add(shield);
-        if(shieldList.Count == 1) enemyUI.EnableShield(shieldList[0].shieldImage, shieldList[0].shieldColor, shieldList[0].GetShieldText());
+        if(shieldList.Count == 1) enemyUI.SetShield(shieldList[0].shieldImage, shieldList[0].shieldColor, shieldList[0].GetShieldText());
     }
 
     public async void Damage(AttackRBlock attackRBlock) //ダメージ処理
     {
         DamageUI damageUI = Addressables.InstantiateAsync("DamageCanvas").WaitForCompletion().GetComponent<DamageUI>();
-        if (hp == 0) Kill();
-        bool isWeak = false;
+        if (hp == 0) OnKill();
+        int weaknessMultiplier = 1;
         if(shieldList.Count > 0) 
         {
-            if(shieldList[0].CanDestroy(attackRBlock.Power)) 
+            if(shieldList[0].CanDestroy(attackRBlock.power)) 
             {
                 shieldList.RemoveAt(0); //シールドが破壊される場合はシールドを削除
-                if(shieldList.Count != 0) enemyUI.EnableShield(shieldList[0].shieldImage, shieldList[0].shieldColor, shieldList[0].GetShieldText());
+                if(shieldList.Count != 0) enemyUI.SetShield(shieldList[0].shieldImage, shieldList[0].shieldColor, shieldList[0].GetShieldText());
                 else enemyUI.DisableShield();
             }
             else 
             {
-                damageUI.Active(this, 0, false);
+                damageUI.Generate(this, 0, false);
                 return;
             }
         }
 
         foreach(ColorType colorType in weakColorList)
         {
-            if(attackRBlock.ColorType.Contains(colorType))
+            if(attackRBlock.colorTypeList.Contains(colorType))
             {
-                isWeak = true;
+                weaknessMultiplier *= 2;
                 break;
             }
         }
+        int damage = attackRBlock.power * weaknessMultiplier;
 
-        if(isWeak) hp -= attackRBlock.Power * 2;
-        else hp -= attackRBlock.Power;
+        damageUI.Generate(this, attackRBlock.power, weaknessMultiplier != 1);
 
-        damageUI.Active(this, attackRBlock.Power, isWeak);
-
-        hp = Mathf.Max(0, hp);
-        await enemyUI.SetHP(hp);
-        if (hp == 0) Kill();
+        await enemyUI.SetHP(hp - damage);
+        hp = Mathf.Max(0, hp - damage);
+        if (hp == 0) OnKill();
     }
 
     public void Update()
     {
         //即時発動スキルの処理
-        EnemySkill enemySkill = GetActivatableSkill();
-        if(enemySkill != null)
+        EnemySkill ImmediatelySkill = CheckImmediatelySkill();
+        if(ImmediatelySkill != null) 
         {
-            nextSkill.requirement.isEnd();
-            nextSkill = enemySkill;
+            _ = Attack(ImmediatelySkill);
         }
 
         if(nextSkill == null) return;
-        if(nextSkill.IsAttack)
-        {
-            canAttack = false;
-            Attack();
-        }
-        else enemyUI.SetInterval(nextSkill.requirement.GetAttackUIText());
+
+        enemyUI.SetInterval(nextSkill.requirement.GetAttackUIText());
+        if(nextSkill.IsAttack) _ = Attack(nextSkill);  
     }
 
-    public void Attack() //攻撃処理
+    public async UniTask Attack(EnemySkill enemySkill) //攻撃処理
     {
-        canAttack = false;
+        if(attackNow) return;
+        attackNow = true;
 
-        foreach(BaseEffectData boardEffect in nextSkill.boardEffectList) boardEffect.Execute(this);
-        if(nextSkill.isOnce) enemySkillList.Remove(nextSkill);
-        else nextSkill.requirement.isEnd();
+        foreach(BaseEffectData boardEffect in enemySkill.boardEffectList) await boardEffect.Execute(this);
+        enemySkill.requirement.isEnd();
+        if(enemySkill.isOnce) skillList.Remove(enemySkill);
 
-        nextSkill = GetNextSkill();
+        nextSkill = GetRandomSkill();
         if(nextSkill != null)
         {
             nextSkill.requirement.isSelected();
             enemyUI.SetInterval(nextSkill.requirement.GetAttackUIText());
         }
-        canAttack = true;
+
+        attackNow = false;
     }
 
-    void Kill() //死亡時の処理
+    void OnKill() //死亡時の処理
     {
         if(!isAlive) return;
         isAlive = false;
 
         //死亡時アニメーション
         this.gameObject.SetActive(false);
-        EneM.OnKilled(this);
+        EneM.AlertKill(this);
     }
 
-    EnemySkill GetNextSkill()
+    EnemySkill GetRandomSkill()
     {
-        int MaxProbability = 0;
-        foreach(EnemySkill skill in enemySkillList) MaxProbability += skill.probability;
+        int MaxProbability = 0; //スキルの発動確率の合計
+        foreach(EnemySkill skill in skillList) MaxProbability += skill.probability;
+
         int random = UnityEngine.Random.Range(0, MaxProbability);
         int probability = 0;
-        foreach(EnemySkill skill in enemySkillList)
+        foreach(EnemySkill skill in skillList)
         {
             probability += skill.probability;
             if(random < probability) return skill;
@@ -175,9 +177,9 @@ public class Enemy : MonoBehaviour
         return null;
     }
 
-    EnemySkill GetActivatableSkill()
+    EnemySkill CheckImmediatelySkill()
     {
-        foreach(EnemySkill skill in enemySkillList)
+        foreach(EnemySkill skill in skillList)
         {
             if(skill.isImmediately && skill.IsAttack) return skill;
         }

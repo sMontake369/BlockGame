@@ -40,23 +40,23 @@ public class BattleManager : MonoBehaviour
         }
 
         GamM = new GameObject("GameManager").AddComponent<MainGameManager>();
-        GamM.transform.position = this.transform.position;
         GamM.name = "GameManager";
         GamM.transform.SetParent(this.transform);
+        GamM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
         FraM = new GameObject("FrameManager").AddComponent<FrameManager>();
-        FraM.transform.position = this.transform.position;
         FraM.transform.SetParent(this.transform);
+        FraM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
         EneM = new GameObject().AddComponent<EnemyManager>();
         EneM.name = "EnemyManager";
-        EneM.transform.position = this.transform.position;
         EneM.transform.SetParent(this.transform);
+        EneM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
         AttM = new GameObject("AttackManager").AddComponent<AttackManager>();
         AttM.name = "AttackManager";
-        AttM.transform.position = this.transform.position;
         AttM.transform.SetParent(this.transform);
+        AttM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
         GamM.Init();
         EneM.Init();
@@ -93,10 +93,9 @@ public class BattleManager : MonoBehaviour
 
         await UniTask.Delay(2000); //カメラの移動待ち
 
-        AttM.GenToken(); //これいる？
         EneM.PlayEnemy();
         ConM.SetGameManager(GamM);
-        GamM.SetNextPlayerBlock();
+        GamM.TurnStart();
     }
 
     public void ClearBattle() //ステージクリア時の処理
@@ -104,7 +103,7 @@ public class BattleManager : MonoBehaviour
         battleState = BattleState.Clear;
         Debug.Log(battleData.name + " Clear!");
 
-        AttM.ResetAttackBLock();
+        AttM.Reset();
         GamM.ResetBlock();
 
         StaM.PlayNextBattle();

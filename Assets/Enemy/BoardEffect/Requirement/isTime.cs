@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "isTime", menuName = "Effect/CreateIsTime")]
+[CreateAssetMenu(fileName = "isTime", menuName = "EffectRequirement/CreateIsTime")]
 public class isTime : EffectRequirement
 {
     float selectedTime; //選択されてからの時間
@@ -10,8 +10,9 @@ public class isTime : EffectRequirement
     [Header("発動時間")]
     public float activationTime;
 
-    public override void Init()
+    public override void Init(Enemy enemy)
     {
+        this.enemy = enemy;
         selectedTime = 0;
     }
 

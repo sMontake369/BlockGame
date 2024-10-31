@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,7 +10,6 @@ using UnityEngine.EventSystems;
 using Unity.VisualScripting;
 using UnityEditor;
 
-#if UNITY_EDITOR
 public class FrameEditor : MonoBehaviour
 {
     EditorManager EdiM;
@@ -72,7 +73,7 @@ public class FrameEditor : MonoBehaviour
 
         //frameの生成
         frameSize = new Vector2Int(int.Parse(xInputField.text), int.Parse(yInputField.text));
-        EdiM.FraM.EditFrame(frameSize);
+        EdiM.FraM.SetFrame(EdiM.MakeFrameData(frameSize));
         EdiM.GeneratePanel(frameSize);
 
         //rootBlockの生成
@@ -91,7 +92,7 @@ public class FrameEditor : MonoBehaviour
             Mathf.Round(EdiM.mousePos.z * 2) / 2
         );
         screenPos.z = 0;
-        EdiM.pointerObj.transform.position = screenPos;
+        // EdiM.pointerObj.transform.position = screenPos;
 
         //左クリック時の処理
         if(Input.GetMouseButton(0)) OnLeftClick();

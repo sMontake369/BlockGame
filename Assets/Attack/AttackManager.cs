@@ -14,21 +14,18 @@ public class AttackManager : MonoBehaviour
     EnemyManager EneM;
     BattleManager BatM;
     AttackUI AttackUI;
-    int targetIndex = 0; //攻撃対象のインデックス
+    int targetIndex = 0; //攻撃対象の番号
     [SerializeField]
     public int maxEdge = 10; //最大の辺の長さ
 
-    AttackRBlock attackRBlock;
-    List<BaseBlock> waitingBlockList = new List<BaseBlock>(); //攻撃ブロックのリスト
-    float attackTime = 0;
-    public float AttackTime { get => attackTime; }
-    int edge = 1; //正方形の辺の長さ
+    AttackRBlock aRBlock;
+    List<BaseBlock> blockQueue = new List<BaseBlock>(); //待機中の攻撃ブロックのリスト
 
     GameObject centerObject; //回転の中心
     float radius = 4f; //半径
     float rotateSpeed = 180; //回転速度
 
-    bool doUpdating = false; //攻撃ブロックを設定中か
+    public bool doUpdating = false; //攻撃ブロックを設定中か
     CancellationTokenSource cts;
     CancellationToken token;
 
@@ -51,61 +48,43 @@ public class AttackManager : MonoBehaviour
         token = cts.Token;  
     }
 
-    public async void Update() 
+    public void Update()
     {
-        if(attackRBlock == null) return;
+        if(aRBlock == null) return;
 
-        rotateSpeed = 90 + Mathf.Clamp(attackRBlock.GetBlockNum() * 3f, 0, 180);
+        rotateSpeed = 90 + Mathf.Clamp(aRBlock.GetBlockNum() * 3f, 0, 180);
         centerObject.transform.Rotate(new Vector3(-1, -1, -1), rotateSpeed * Time.deltaTime);
-
-        if(doUpdating) return;
-        if(attackTime >= 0 && attackRBlock) 
-        {
-            attackTime -= Time.deltaTime;
-        }
-
-        if(attackTime < 0 && attackRBlock.GetBlockNum() > 0)
-        {
-            doUpdating = true;
-            await Attack(token);
-            await CheckEnoughBlocks(token);
-            doUpdating = false;
-        }
     }
 
-    public async UniTask Attack(CancellationToken token) //攻撃を実行
+    public void Attack() //攻撃を実行
     {
-        try { await UniTask.Delay(1000, cancellationToken: token); }
-        catch(OperationCanceledException) { return; }
+        if(aRBlock == null) return;
+
         AttackUI.Reset();
         AttackUI.transform.SetParent(this.transform);
 
         //if(1 < attackRBlock.GetBlockNum()) attackRBlock.ToOneBlock(); ------------------------------------------------------
-        attackRBlock.Attack(EneM.EnemyList[targetIndex]);
+        aRBlock.Attack(EneM.EnemyList[targetIndex]);
+        aRBlock = null;
 
-        attackTime = 0;
-        attackRBlock = null;
+        //とりあえず全部消す。いずれこれも一緒に攻撃する
+        foreach(BaseBlock block in blockQueue) Destroy(block.gameObject);
+        blockQueue.Clear();
+        doUpdating = false;
     }
 
-    public void ResetAttackBLock()
+    public void Reset()
     {
         cts.Cancel();
         AttackUI.gameObject.SetActive(false);
-        if(attackRBlock != null) BlockPool.ReleaseNotRootBlock(attackRBlock);
-        attackRBlock = null;
+        if(aRBlock != null) BlockPool.ReleaseNotRootBlock(aRBlock);
+        aRBlock = null;
 
-        foreach(BaseBlock block in waitingBlockList) BlockPool.ReleaseNotBaseBlock(block);
-        waitingBlockList.Clear();
+        foreach(BaseBlock block in blockQueue) BlockPool.ReleaseNotBaseBlock(block);
+        blockQueue.Clear();
 
-        attackTime = 0;
         doUpdating = false;
         AttackUI.Reset();
-    }
-
-    public void GenToken() //これいる？
-    {
-        cts = new CancellationTokenSource();  
-        token = cts.Token;
     }
 
     public void SetTarget() //ターゲットを設定
@@ -114,11 +93,31 @@ public class AttackManager : MonoBehaviour
         targetIndex %= EneM.EnemyList.Count;
     }
 
-    public async void AddAttackQueue(List<BaseBlock> candidateBlockList) //消されたブロックのリストを受け取り、
+    AttackRBlock CreateAttackRBlock()
+    {
+        AttackRBlock attackRBlock = GamM.RootConvert<AttackRBlock>(GamM.GenerateRBlock());
+        attackRBlock.transform.parent = this.transform;
+        attackRBlock.name = "AttackRBlock";
+        attackRBlock.transform.position = FraM.WFrameBorder.lowerLeft + BatM.battleData.attackPos;
+        return attackRBlock;
+    }
+
+    public async void AddAttackQueue(List<BaseBlock> blockList, int lineNum) //消されたブロックを攻撃ブロックとして待機リストに追加
     {
         if(token.IsCancellationRequested) return;
 
-        waitingBlockList.AddRange(candidateBlockList);
+        blockQueue.AddRange(blockList);
+
+        if(aRBlock == null) //攻撃ブロックがない場合は新しく作成
+        {
+            aRBlock = CreateAttackRBlock();
+
+            AttackUI.gameObject.SetActive(true);
+            AttackUI.transform.SetParent(aRBlock.transform);
+            AttackUI.transform.position = aRBlock.transform.position + new Vector3(0, 0, -10f);
+        }
+        aRBlock.AddPower(blockList.Count, lineNum);
+        AttackUI.SetPower(aRBlock.power);
 
         //設定中でない場合はブロックを設定 
         if(!doUpdating)
@@ -127,95 +126,36 @@ public class AttackManager : MonoBehaviour
             await CheckEnoughBlocks(token);
             doUpdating = false;
         }
-        else AnimateWaitingBlocks(candidateBlockList, token);
+        else SetWaitingBlocks(blockQueue, token);
     }
     
     async UniTask CheckEnoughBlocks(CancellationToken token) //必要数を攻撃ブロックに、余りを待機ブロックに設定
     {
-        if(token.IsCancellationRequested) return;
-
-        //正方形を作るのに追加で必要なブロック数を計算
-        int blockNum = 0;
-        if(attackRBlock) blockNum = attackRBlock.GetBlockNum();
-
-        edge = 1;
-        while((edge * edge) <= blockNum) edge++;
-        int needBlockNum = (edge * edge) - blockNum; //一回り大きい正方形を作るのに必要なブロック数
-
-        //追加で必要なブロック数が足りているか
-        if(waitingBlockList.Count >= needBlockNum)
+        while(aRBlock != null && aRBlock.CanSquire(blockQueue.Count))
         {
-            List<BaseBlock> setBlockList = new List<BaseBlock>(waitingBlockList.GetRange(0, needBlockNum)); //設定するブロックのリスト
-            waitingBlockList.RemoveRange(0, needBlockNum);
-            if(setBlockList.Count != needBlockNum) Debug.Log(setBlockList.Count + " " + needBlockNum);
-
-            await SetAttackBlock(setBlockList, token);
-            AnimateWaitingBlocks(waitingBlockList, token);
-            if(edge >= maxEdge) await Attack(token); //辺の数が最大になったら待たずに攻撃
-
-            await CheckEnoughBlocks(token); //再帰
+            int needNum = (aRBlock.edge + 1) * (aRBlock.edge + 1) - aRBlock.edge * aRBlock.edge;
+            List<BaseBlock> blockList = blockQueue.GetRange(0, needNum);
+            blockQueue.RemoveRange(0, needNum);
+            await aRBlock.SetSquire(blockList);
+            if(aRBlock.edge >= maxEdge) Attack();
         }
-        else AnimateWaitingBlocks(waitingBlockList, token);
+        SetWaitingBlocks(blockQueue, token);
     }
 
-    private async UniTask SetAttackBlock(List<BaseBlock> setBlockList, CancellationToken token) //攻撃ブロックを設定
+    async void SetWaitingBlocks(List<BaseBlock> blockList, CancellationToken token) //待機ブロックを設定
     {
-        if(attackRBlock == null) //攻撃ブロックがない場合は新しく作成
-        {
-            attackRBlock = GamM.RootConvert<AttackRBlock>(GamM.GenerateRBlock());
-            attackRBlock.transform.parent = this.transform;
-            attackRBlock.name = "AttackRBlock";
-            attackRBlock.transform.position = FraM.WFrameBorder.lowerLeft + BatM.battleData.attackPos;
-
-            AttackUI.gameObject.SetActive(true);
-            AttackUI.transform.SetParent(attackRBlock.transform);
-            AttackUI.transform.position = attackRBlock.transform.position + new Vector3(0, 0, -10f);
-        }
-
-        int blockNum = setBlockList.Count;
-        int x;
-        for(int y = 0; y < edge; y++)
-        {
-            if(y < edge - 1) x = edge - 1;
-            else x = 0;
-            for(; x < edge; x++)
-            {
-                BaseBlock block = setBlockList[0];
-                setBlockList.RemoveAt(0);
-                block.transform.DOKill();
-
-                Vector3Int index = new Vector3Int(x, y, 0); //正方形に配置する座標
-                attackRBlock.AddBlock(block, index, false);
-
-                //アニメーション
-                _ = block.transform.DOJump(attackRBlock.transform.position + index, 5, 1, 0.7f).SetEase(Ease.InOutQuad);
-                _ = block.transform.DORotate(new Vector3(-90,0,0), 1f).SetEase(Ease.InExpo);
-
-                try { await UniTask.Delay(10, cancellationToken: token); }
-                catch(OperationCanceledException) { return;}
-            }
-        }
-
-        attackTime += (2.5f * blockNum) / attackRBlock.GetBlockNum();
-        attackRBlock.AddPower(blockNum);
-        AttackUI.SetPower(attackRBlock.Power);
-        AttackUI.SetPos(edge);
-    }
-
-    async void AnimateWaitingBlocks(List<BaseBlock> baseBlockList, CancellationToken token) //待機ブロックを設定
-    {
-        radius = edge ;
-        if(attackRBlock) _ = centerObject.transform.DOMove(attackRBlock.transform.position + new Vector3(radius / 2.0f - 1f, radius / 2.0f - 1f, 0), 0.5f);
-        foreach(BaseBlock baseBlock in baseBlockList) baseBlock.transform.parent = centerObject.transform;
+        radius = aRBlock.edge;
+        if(aRBlock) _ = centerObject.transform.DOMove(aRBlock.transform.position + new Vector3(radius / 2.0f - 1f, radius / 2.0f - 1f, 0), 0.5f);
+        foreach(BaseBlock baseBlock in blockList) baseBlock.transform.parent = centerObject.transform;
         
-        for(int i = 0; i < waitingBlockList.Count; i++)
+        for(int i = 0; i < blockQueue.Count; i++)
         {
-            var point =  ((float)i / waitingBlockList.Count) * 2 * Mathf.PI;
+            var point =  ((float)i / blockQueue.Count) * 2 * Mathf.PI;
             float x = Mathf.Cos(point) * radius;
             float y = Mathf.Sin(point) * radius;
 
-            _ = waitingBlockList[i].transform.DOLocalRotate(new Vector3(0,0, 360 / waitingBlockList.Count * i + 90), 0.5f);
-            _ = waitingBlockList[i].transform.DOLocalMove(new Vector3(x, y, 0), 0.5f);
+            _ = blockQueue[i].transform.DOLocalRotate(new Vector3(0,0, 360 / blockQueue.Count * i + 90), 0.5f);
+            _ = blockQueue[i].transform.DOLocalMove(new Vector3(x, y, 0), 0.5f);
 
             try { await UniTask.Delay(10, cancellationToken: token); }
             catch(OperationCanceledException) { return;}

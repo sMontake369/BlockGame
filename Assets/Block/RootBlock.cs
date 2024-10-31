@@ -7,6 +7,7 @@ public class RootBlock : MonoBehaviour
 {
     public MainGameManager GamM;
     public FrameManager FraM;
+    public RootBlockData blockData; //自身のブロックのデータ
 
     public GameObject pivot;
     GhostBlock ghostBlock;
@@ -192,20 +193,14 @@ public class RootBlock : MonoBehaviour
 
         //ブロックを追加
         blockListList[shapeIndex.y][shapeIndex.x] = baseBlock;
-        if(setPos) baseBlock.transform.localPosition = transform.position + shapeIndex;
-        baseBlock.transform.rotation = Quaternion.Euler(new Vector3(-90,0,0));
-        baseBlock.transform.parent = pivot.transform;
+
+        //ブロックの位置を設定するため、一度RootBlockを親に設定。　このあとpivotを親にするため二度手間、どうにかしたい
+        baseBlock.transform.parent = this.transform;
+        if(setPos) baseBlock.transform.localPosition = shapeIndex;
+
+        baseBlock.transform.parent = pivot.transform;        
         baseBlock.SetRootBlock(this);
         baseBlock.shapeIndex = shapeIndex;
-    }
-
-    public void SetListList(Vector2Int index)
-    {
-        for(int i = 0; i <= index.y; i++) 
-        {
-            blockListList.Add(new List<BaseBlock>(index.x));
-            for(int j = 0; j < index.x; j++) blockListList[i].Add(null);
-        }
     }
 
     public virtual void Destroy()
@@ -220,7 +215,6 @@ public class RootBlock : MonoBehaviour
         if(ghostBlock == null)//ゴーストブロックがない場合新たに生成する
         {
             ghostBlock = GamM.RootConvert<GhostBlock>(GamM.GenerateRBlock());
-            ghostBlock.Init(GamM, FraM);
             ghostBlock.CopyRootBlock(this);
             if(fall) ghostBlock.FallUntilConflict();
         }
