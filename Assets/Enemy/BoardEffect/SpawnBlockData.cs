@@ -13,6 +13,10 @@ public class SpawnBlockData : BaseEffectData
     MainGameManager GamM;
     FrameManager FraM;
     BattleManager BatM;
+    AudioManager AudM;
+
+    public AudioClip setBlockSE = default;
+    public AudioClip AttackSE = default;
 
     public override void Init(Enemy enemy)
     {
@@ -20,6 +24,7 @@ public class SpawnBlockData : BaseEffectData
         BatM = StaM.GetCurBattle();
         GamM = BatM.GamM;
         FraM = BatM.FraM;
+        AudM = StaM.AudM;
         this.enemy = enemy;
     }
 
@@ -75,12 +80,17 @@ public class SpawnBlockData : BaseEffectData
         rootBlock.GhostBlock.transform.position = BatM.battlePos.lowerLeft + pos;
 
         //ブロックの所定の位置に移動
+        AudM.PlaySound(AttackSE, 0.5f);
         rootBlock.transform.localScale = Vector3.zero;
-        _ = rootBlock.transform.DOScale(1, 0.4f).SetEase(Ease.OutBounce);
-        await rootBlock.transform.DOJump(FraM.WFrameBorder.lowerLeft + pos, 10, 1, 1.0f).SetEase(Ease.InExpo).SetEase(Ease.InQuint);
-
-        //ゴーストブロックを消す
+        _ = rootBlock.transform.DOScale(1.1f, 0.4f);
+        await rootBlock.transform.DOJump(FraM.WFrameBorder.lowerLeft + pos + new Vector3(0, 0, -0.1f), 10, 1, 1.0f).SetEase(Ease.InQuart);
         rootBlock.DestroyGhostBlock();
+        await rootBlock.pivot.transform.DOScale(1.5f, 0.55f).SetEase(Ease.OutExpo);
+        await rootBlock.pivot.transform.DOScale(1, 0.15f).SetEase(Ease.InQuint);
+        rootBlock.transform.position += new Vector3(0, 0, 0.1f);
+        rootBlock.transform.localScale = Vector3.one;
+        AudM.PlaySound(setBlockSE);
+
         
         //もう一度衝突判定
         for(int y = 0; y < rootBlock.BlockListList.Count; y++)

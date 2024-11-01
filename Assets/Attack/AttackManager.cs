@@ -13,7 +13,7 @@ public class AttackManager : MonoBehaviour
     FrameManager FraM;
     EnemyManager EneM;
     BattleManager BatM;
-    AttackUI AttackUI;
+    AttackUI attackUI;
     int targetIndex = 0; //攻撃対象の番号
     [SerializeField]
     public int maxEdge = 10; //最大の辺の長さ
@@ -36,10 +36,10 @@ public class AttackManager : MonoBehaviour
         FraM = BatM.FraM;
         EneM = BatM.EneM;
         
-        AttackUI = Addressables.InstantiateAsync("AttackCanvas").WaitForCompletion().GetComponent<AttackUI>();
-        AttackUI.GetComponent<Canvas>().worldCamera = Camera.main;
-        AttackUI.transform.SetParent(this.transform);
-        AttackUI.gameObject.SetActive(false);
+        attackUI = Addressables.InstantiateAsync("AttackCanvas").WaitForCompletion().GetComponent<AttackUI>();
+        attackUI.GetComponent<Canvas>().worldCamera = Camera.main;
+        attackUI.transform.SetParent(this.transform);
+        attackUI.gameObject.SetActive(false);
 
         centerObject = new GameObject("WaitingList");
         centerObject.transform.SetParent(this.transform);
@@ -60,8 +60,9 @@ public class AttackManager : MonoBehaviour
     {
         if(aRBlock == null) return;
 
-        AttackUI.Reset();
-        AttackUI.transform.SetParent(this.transform);
+        attackUI.Reset();
+        attackUI.gameObject.SetActive(false);
+        attackUI.transform.SetParent(this.transform);
 
         //if(1 < attackRBlock.GetBlockNum()) attackRBlock.ToOneBlock(); ------------------------------------------------------
         aRBlock.Attack(EneM.EnemyList[targetIndex]);
@@ -76,7 +77,7 @@ public class AttackManager : MonoBehaviour
     public void Reset()
     {
         cts.Cancel();
-        AttackUI.gameObject.SetActive(false);
+        attackUI.gameObject.SetActive(false);
         if(aRBlock != null) BlockPool.ReleaseNotRootBlock(aRBlock);
         aRBlock = null;
 
@@ -84,7 +85,7 @@ public class AttackManager : MonoBehaviour
         blockQueue.Clear();
 
         doUpdating = false;
-        AttackUI.Reset();
+        attackUI.Reset();
     }
 
     public void SetTarget() //ターゲットを設定
@@ -98,7 +99,8 @@ public class AttackManager : MonoBehaviour
         AttackRBlock attackRBlock = GamM.RootConvert<AttackRBlock>(GamM.GenerateRBlock());
         attackRBlock.transform.parent = this.transform;
         attackRBlock.name = "AttackRBlock";
-        attackRBlock.transform.position = FraM.WFrameBorder.lowerLeft + BatM.battleData.attackPos;
+        attackRBlock.transform.position = FraM.WFrameBorder.lowerLeft + BatM.battleData.attackPos + new Vector3(0, 0, -3f);
+        attackUI.gameObject.SetActive(true);
         return attackRBlock;
     }
 
@@ -112,12 +114,12 @@ public class AttackManager : MonoBehaviour
         {
             aRBlock = CreateAttackRBlock();
 
-            AttackUI.gameObject.SetActive(true);
-            AttackUI.transform.SetParent(aRBlock.transform);
-            AttackUI.transform.position = aRBlock.transform.position + new Vector3(0, 0, -10f);
+            attackUI.gameObject.SetActive(true);
+            attackUI.transform.SetParent(aRBlock.transform);
+            attackUI.transform.position = aRBlock.transform.position + new Vector3(0, 0, -1f);
         }
         aRBlock.AddPower(blockList.Count, lineNum);
-        AttackUI.SetPower(aRBlock.power);
+        attackUI.SetPower(aRBlock.power);
 
         //設定中でない場合はブロックを設定 
         if(!doUpdating)
@@ -137,6 +139,7 @@ public class AttackManager : MonoBehaviour
             List<BaseBlock> blockList = blockQueue.GetRange(0, needNum);
             blockQueue.RemoveRange(0, needNum);
             await aRBlock.SetSquire(blockList);
+            attackUI.SetPos(aRBlock.edge);
             if(aRBlock.edge >= maxEdge) Attack();
         }
         SetWaitingBlocks(blockQueue, token);

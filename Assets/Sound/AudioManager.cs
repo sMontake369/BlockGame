@@ -38,9 +38,9 @@ public class AudioManager : MonoBehaviour
         BGMSource.DOFade(endValue: 0.5f, duration: 5f);
     }
 
-    void PlaySound(AudioClip clip)
+    public void PlaySound(AudioClip clip, float volume = 1)
     {
-        SESource.PlayOneShot(clip);
+        SESource.PlayOneShot(clip, volume);
     }
 
     public void PlayNormalSound(NormalSound normalSound)

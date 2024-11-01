@@ -61,7 +61,7 @@ public class AttackRBlock : RootBlock //RAttack
     {
         int edge = Mathf.CeilToInt(Mathf.Sqrt(GetBlockNum()));
         GameObject video = Resources.Load<GameObject>("video");
-        GameObject obj = Instantiate(video, transform.position + new Vector3(edge / 2, edge / 2, -0.2f), Quaternion.Euler(90,180,0));
+        GameObject obj = Instantiate(video, transform.position + new Vector3((edge * 0.8f) / 2.0f, (edge * 0.8f) / 2.0f, -0.2f), Quaternion.Euler(90,180,0));
         obj.transform.localScale = new Vector3(edge / 10.0f, edge / 10.0f, edge / 10.0f);
         obj.transform.parent = transform;
         for(int i = 0; i < 10; i++)

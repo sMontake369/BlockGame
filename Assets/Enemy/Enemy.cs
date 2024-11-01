@@ -135,8 +135,12 @@ public class Enemy : MonoBehaviour
             }
         }
 
-        if(nextSkill == null) nextSkill = GetRandomSkill(); //途中で条件を満たすスキルできるかもしれない
-        if(nextSkill == null) return;
+        if(nextSkill == null) 
+        {
+            nextSkill = GetRandomSkill(); //途中で条件を満たすスキルできるかもしれない
+            if(nextSkill != null) nextSkill.AttackReq.isSelected();
+            else return;
+        }
 
         enemyUI.SetInterval(nextSkill.AttackReq.GetAttackUIText());
         if(nextSkill.AttackReq.isAttack()) 
@@ -160,7 +164,11 @@ public class Enemy : MonoBehaviour
         if(attackNow) return;
         attackNow = true;
 
-        foreach(BaseEffectData boardEffect in boardEffectList) await boardEffect.Execute();
+        foreach(BaseEffectData boardEffect in boardEffectList) 
+        {
+            if(boardEffect.isWait) await boardEffect.Execute();
+            else _ = boardEffect.Execute();
+        }
 
         attackNow = false;
     }
@@ -205,5 +213,18 @@ public class Enemy : MonoBehaviour
             return enemyEvent; //条件を満たしている場合
         }
         return null;
+    }
+
+    public void SetNextSkill(EnemySkill enemySkill, bool isNow) //次に発動するスキルをセット
+    {
+        enemySkill.Init(this);
+        skillList.Add(enemySkill);
+        if(isNow)
+        {
+            if(nextSkill != null) nextSkill.AttackReq.isEnd();
+            nextSkill = enemySkill;
+            nextSkill.AttackReq.isSelected();
+            enemyUI.SetInterval(nextSkill.AttackReq.GetAttackUIText());
+        }
     }
 }
