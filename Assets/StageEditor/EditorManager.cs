@@ -100,9 +100,8 @@ public class EditorManager : MonoBehaviour
     {
         FrameData frameData = ScriptableObject.CreateInstance<FrameData>();
         frameData.frameSize = new Vector3Int(size.x, size.y, 0);
-        frameData.indexDataList = new List<int>();
+        frameData.frameIndexList = new List<FrameIndexData>();
         frameData.blockDataList = new List<BlockData>();
-        for(int i = 0; i < size.x * size.y; i++) frameData.indexDataList.Add(-1);
         return frameData;
     }
 }

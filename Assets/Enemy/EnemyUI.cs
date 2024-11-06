@@ -12,9 +12,10 @@ public class EnemyUI : MonoBehaviour
     public Slider hpBar;
     public Image hpBarImage;
     public TextMeshProUGUI attackInterval;
+    public GameObject attackBG;
     public Image attackIntervalImage;
     public TextMeshProUGUI enemyName;
-    public Image ShieldImage;
+    public RawImage ShieldImage;
     public TextMeshProUGUI ShieldText;
     Color maxColor = new Color(0.65f, 1, 0.25f, 1);
     Color minColor = new Color(1, 0.2f, 0.1f, 1);
@@ -37,6 +38,12 @@ public class EnemyUI : MonoBehaviour
         await UniTask.Delay(100);
     }
 
+    public void disableInterval() //攻撃間隔を非表示
+    {
+        Debug.Log("disableInterval");
+        attackBG.SetActive(false);
+    }
+
     public void SetInterval(IntervalUI intervalUI) //攻撃間隔を設定
     {
         if(attackInterval) 
@@ -53,8 +60,6 @@ public class EnemyUI : MonoBehaviour
     {
         ShieldImage.gameObject.SetActive(true);
         ShieldText.text = text;
-        ShieldImage.sprite = sprite;
-        ShieldImage.color = color;
     }
 
     public void DisableShield()

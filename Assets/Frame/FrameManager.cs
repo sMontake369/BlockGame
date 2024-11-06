@@ -21,13 +21,14 @@ public class FrameManager : MonoBehaviour
     {
         this.BatM = BatM;
         GamM = BatM.GamM;
-        frameBorder = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(0, 0, 0));
 
         if(!BatM || !GamM) 
         {
             Debug.Log("BattleManager or MainGameManager is not found");
             return;
         }
+
+        frameBorder = new BorderInt(new Vector3Int(0, 0, 0), new Vector3Int(0, 0, 0));
     }
 
     List<List<FrameBox>> GenerateFrame(FrameData frameData) //フレームを生成
@@ -39,21 +40,30 @@ public class FrameManager : MonoBehaviour
             for(int x = 0; x < frameData.frameSize.x; x++)
             {
                 newFrameListList[y].Add(new FrameBox());
-                if(frameData.indexDataList[(y * frameData.frameSize.x) + x] == -2) newFrameListList[y][x].canMove = false;
-                else newFrameListList[y][x].canMove = true;
-
-                if(frameData.indexDataList[(y * frameData.frameSize.x) + x] <= -1) continue;
-                
-                if(frameData.blockDataList.Count <= frameData.indexDataList[(y * frameData.frameSize.x) + x])
-                {
-                    Debug.Log("FrameManager: 存在しないブロックデータが指定されています");
-                    continue;
-                }
-                BlockData blockData = frameData.blockDataList[frameData.indexDataList[(y * frameData.frameSize.x) + x]];
-                BaseBlock baseBlock = GamM.GenerateBlock(blockData.blockType, blockData.colorType, blockData.texture);
-                baseBlock.transform.parent = this.transform;
-                newFrameListList[y][x].SetBlock(baseBlock);
             }
+        }
+
+        foreach(FrameIndexData frameIndex in frameData.frameIndexList)
+        {
+            Vector2Int pos = frameIndex.pos;
+            if(frameIndex.dataIndex == -1) 
+            {
+                newFrameListList[pos.y][pos.x].canMove = false;
+                continue;
+            }
+            else newFrameListList[pos.y][pos.x].canMove = true;
+
+            if(frameData.blockDataList.Count <= frameIndex.dataIndex)
+            {
+                Debug.Log("FrameManager: 存在しないブロックデータが指定されています");
+                continue;
+            }
+
+
+            BlockData blockData = frameData.blockDataList[frameIndex.dataIndex];
+            BaseBlock baseBlock = GamM.GenerateBlock(blockData.blockType, blockData.colorType, blockData.texture);
+            baseBlock.transform.parent = this.transform;
+            newFrameListList[frameIndex.pos.y][frameIndex.pos.x].SetBlock(baseBlock);
         }
         return newFrameListList;
     }
@@ -67,7 +77,7 @@ public class FrameManager : MonoBehaviour
         for(int x = 0; x < frameListList[y].Count; x++)
         {
             if(!frameListList[y][x].IsContain()) continue;
-            frameListList[y][x].BaseBlock.transform.localPosition = this.transform.localPosition + new Vector3(x, y, 0);
+            frameListList[y][x].baseBlock.transform.localPosition = this.transform.localPosition + new Vector3(x, y, 0);
         }
         Vector3Int frameSize = new Vector3Int(frameListList[0].Count, frameListList.Count, 0);
         frameBorder.SetMinMax(Vector3Int.zero, frameSize - new Vector3Int(1, 1, 0)); //配列は0から始まるので-1
@@ -95,8 +105,8 @@ public class FrameManager : MonoBehaviour
         {
             if(frameListList[y][x] == null) continue;
             if(!frameListList[y][x].IsContain()) continue;
-            frameListList[y][x].BaseBlock.frameIndex += insertNum;
-            frameListList[y][x].BaseBlock.transform.position += insertNum;
+            frameListList[y][x].baseBlock.frameIndex += insertNum;
+            frameListList[y][x].baseBlock.transform.position += insertNum;
         }
 
         for(int y = 0; y < newFrameListList.Count; y++)
@@ -105,7 +115,7 @@ public class FrameManager : MonoBehaviour
             frameListList[pos.y + y][pos.x + x] = newFrameListList[y][x];
 
             if(!newFrameListList[y][x].IsContain()) continue;
-            newFrameListList[y][x].BaseBlock.transform.position = this.transform.position + pos + new Vector3(x, y, 0);
+            newFrameListList[y][x].baseBlock.transform.position = this.transform.position + pos + new Vector3(x, y, 0);
         }
 
         frameBorder.max += insertNum;
@@ -206,11 +216,11 @@ public class FrameManager : MonoBehaviour
         if(!IsWithinBoard(pos)) return true;
 
         //ブロックが存在しているかどうか
-        if(!frameListList[pos.y][pos.x].canMove) return false;
+        if(!frameListList[pos.y][pos.x].canMove) return true;
         if(!frameListList[pos.y][pos.x].IsContain()) return false;
-        if(frameListList[pos.y][pos.x].BaseBlock.RootBlock == block.RootBlock || 
-        frameListList[pos.y][pos.x].BaseBlock.blockType == BlockType.Ghost ||
-        frameListList[pos.y][pos.x].BaseBlock.RootBlock == GamM.playerBlock) return false; //ブロックが自分自身か、ゴーストブロックかどうか
+        if(frameListList[pos.y][pos.x].baseBlock.RootBlock == block.RootBlock || 
+        frameListList[pos.y][pos.x].baseBlock.blockType == BlockType.Ghost ||
+        frameListList[pos.y][pos.x].baseBlock.RootBlock == GamM.playerBlock) return false; //ブロックが自分自身か、ゴーストブロックかどうか
         else return true;
     }
 
@@ -230,9 +240,19 @@ public class FrameManager : MonoBehaviour
         if(block == null) return null;
         if(!IsWithinBoard(block.frameIndex)) return null;
         if(frameListList[block.frameIndex.y][block.frameIndex.x].IsContain() && 
-        frameListList[block.frameIndex.y][block.frameIndex.x].BaseBlock.RootBlock == block.RootBlock) 
+        frameListList[block.frameIndex.y][block.frameIndex.x].baseBlock.RootBlock == block.RootBlock) 
         {
             return frameListList[block.frameIndex.y][block.frameIndex.x].Delete();
+        }
+        return null;
+    }
+
+    public BaseBlock DeleteBlock(Vector3Int pos) //ベースブロックをフレームから消す よそのブロックは消せない
+    {
+        if(!IsWithinBoard(pos)) return null;
+        if(frameListList[pos.y][pos.x].IsContain())
+        {
+            return frameListList[pos.y][pos.x].Delete();
         }
         return null;
     }
@@ -255,9 +275,13 @@ public class FrameManager : MonoBehaviour
         for(int y = 0; y < frameListList.Count; y++)
         for(int x = 0; x < frameListList[y].Count; x++)
         {
-            if(!frameListList[y][x].IsContain()) continue;
-            blockList.Add(frameListList[y][x].Delete());
+            FrameBox frameBox = frameListList[y][x];
+            if(frameBox.IsContain() && frameBox.baseBlock.blockType == BlockType.Mino && frameBox.baseBlock.RootBlock != GamM.playerBlock)
+            {
+                blockList.Add(frameListList[y][x].Delete());
+            }
         }
+        if(GamM.playerBlock != null) GamM.playerBlock.GenerateGhostBlock();
         return blockList;
     }
 
@@ -290,7 +314,7 @@ public class FrameManager : MonoBehaviour
     {
         if(!IsWithinBoard(pos)) return null;
         if(!frameListList[pos.y][pos.x].IsContain()) return null;
-        return frameListList[pos.y][pos.x].BaseBlock;
+        return frameListList[pos.y][pos.x].baseBlock;
     }
 
     public List<List<BaseBlock>> GetBlocks(Vector3Int from, Vector3Int to) //指定範囲のベースブロックリストを取得
@@ -303,7 +327,7 @@ public class FrameManager : MonoBehaviour
             for(int x = from.x; x < to.x; x++)
             {
                 if(!frameListList[y][x].IsContain()) continue;
-                blockList.Add(frameListList[y][x].BaseBlock);
+                blockList.Add(frameListList[y][x].baseBlock);
             }
             blockListList.Add(blockList);
         }
@@ -318,7 +342,7 @@ public class FrameManager : MonoBehaviour
         for(int x = 0; x < frameListList[y].Count; x++)
         {
             if(!frameListList[y][x].IsContain()) continue;
-            blockList.Add(frameListList[y][x].BaseBlock);
+            blockList.Add(frameListList[y][x].baseBlock);
         }
         return blockList;
     }
@@ -330,8 +354,8 @@ public class FrameManager : MonoBehaviour
         for(int x = 0; x < frameListList[y].Count; x++)
         {
             if(!frameListList[y][x].IsContain()) continue;
-            if(frameListList[y][x].BaseBlock.RootBlock == GamM.playerBlock) continue;
-            if(!rootBlockList.Contains(frameListList[y][x].BaseBlock.RootBlock)) rootBlockList.Add(frameListList[y][x].BaseBlock.RootBlock);
+            if(frameListList[y][x].baseBlock.RootBlock == GamM.playerBlock) continue;
+            if(!rootBlockList.Contains(frameListList[y][x].baseBlock.RootBlock)) rootBlockList.Add(frameListList[y][x].baseBlock.RootBlock);
         }
         return rootBlockList;
     }
@@ -344,9 +368,9 @@ public class FrameManager : MonoBehaviour
         for(int x = from.x; x <= to.x; x++)
         {
             if(!frameListList[y][x].IsContain()) continue;
-            if(frameListList[y][x].BaseBlock.blockType != BlockType.Mino) continue;
-            if(frameListList[y][x].BaseBlock.RootBlock == GamM.playerBlock) continue;
-            if(!rootBlockList.Contains(frameListList[y][x].BaseBlock.RootBlock)) rootBlockList.Add(frameListList[y][x].BaseBlock.RootBlock);
+            if(frameListList[y][x].baseBlock.blockType != BlockType.Mino) continue;
+            if(frameListList[y][x].baseBlock.RootBlock == GamM.playerBlock) continue;
+            if(!rootBlockList.Contains(frameListList[y][x].baseBlock.RootBlock)) rootBlockList.Add(frameListList[y][x].baseBlock.RootBlock);
         }
         return rootBlockList;
     }

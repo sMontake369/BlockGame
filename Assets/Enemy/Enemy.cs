@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -12,16 +13,18 @@ public class Enemy : MonoBehaviour
     public new string name { get; private set; }
     public int maxHp { get; private set; } //HPの最大値;
     public int hp { get; private set; } //現在のHP
-    List<EnemySkill> skillList; //スキルリスト
+    public List<EnemySkill> skillList { get; private set; }  //スキルリスト
     List<EnemyEvent> eventList; //イベントリスト
     EnemySkill nextSkill; //次に発動するスキル
     Shield shield;
     List<ColorType> weakColorList = new List<ColorType>();
 
+    bool canAttack = false;
     bool attackNow = false;
     bool isAlive = true;
 
     EnemyUI enemyUI;
+    EnemyText enemyText;
     EnemyManager eneM;
 
     public void Init(EnemyManager eneM)
@@ -34,6 +37,9 @@ public class Enemy : MonoBehaviour
         maxHp = enemyData.hp;
         hp = maxHp;
         name = enemyData.name;
+        this.name = enemyData.name;
+        weakColorList = enemyData.weakColorList;
+
         if(enemyData.skillList != null) 
         {
             skillList = new List<EnemySkill>(enemyData.skillList);
@@ -45,41 +51,43 @@ public class Enemy : MonoBehaviour
             foreach(EnemyEvent enemy in eventList) enemy.Init(this);
         }
 
-        if(skillList != null) 
-        weakColorList = enemyData.weakColorList;
-        this.name = enemyData.name;
-
-        if(skillList.Count > 0)
-        {
-            nextSkill = GetRandomSkill();
-        }
-
         GameObject enemyCanvas = Addressables.InstantiateAsync("EnemyCanvas").WaitForCompletion();
-        enemyCanvas.name = "EnemyCanvas";
         enemyCanvas.transform.SetParent(this.transform);
         enemyCanvas.transform.position = this.transform.position + new Vector3(0,0,0);
         enemyCanvas.GetComponent<Canvas>().worldCamera = Camera.main;
+
         enemyUI = enemyCanvas.GetComponent<EnemyUI>();
         enemyUI.Init(name, hp);
-        this.gameObject.SetActive(false);
+
+        enemyText = Addressables.InstantiateAsync("EnemyText").WaitForCompletion().GetComponent<EnemyText>();
+        enemyText.name = name + "text";
+        enemyText.transform.SetParent(this.transform);
+        enemyText.transform.localPosition = new Vector3(-4,-1,-1);
+        enemyText.gameObject.SetActive(false);
     }
 
     /// <summary>
     /// 敵の行動を開始
     /// </summary>
-    public void Play()
+    public async UniTask Play()
     {
-        nextSkill = GetRandomSkill();
-        if(nextSkill != null)
+        canAttack = true;
+        EnemyEvent enemyEvent = CheckEvent();
+        while(enemyEvent != null)
         {
-            nextSkill.AttackReq.isSelected();
-            enemyUI.SetInterval(nextSkill.AttackReq.GetAttackUIText());
+            await Attack(enemyEvent.boardEffectList);
+            eventList.Remove(enemyEvent);
+            enemyEvent = CheckEvent();
         }
     }
 
     public void SetShield(Shield shield)
     {
-        if(this.shield != null) return;
+        if(this.shield != null)
+        {
+            shield = null;
+            enemyUI.DisableShield();
+        }
         this.shield = shield;
         enemyUI.SetShield(this.shield.shieldImage, this.shield.shieldColor, this.shield.GetShieldText());
     }
@@ -90,7 +98,7 @@ public class Enemy : MonoBehaviour
         int damage = attackRBlock.power;
         if (hp == 0) OnKill();
         int weaknessMultiplier = 1;
-        if(shield != null && shield.CanDestroy(damage)) 
+        if(shield != null) 
         {
             if(shield.CanDestroy(damage)) 
             {
@@ -122,7 +130,8 @@ public class Enemy : MonoBehaviour
 
     public async void Update()
     {
-        if(attackNow) return;
+        if(!canAttack || attackNow) return;
+
         //即時発動スキルの処理
         if(eventList != null)
         {
@@ -226,5 +235,15 @@ public class Enemy : MonoBehaviour
             nextSkill.AttackReq.isSelected();
             enemyUI.SetInterval(nextSkill.AttackReq.GetAttackUIText());
         }
+    }
+
+    public void DeleteSkill(EnemySkill enemySkill) //スキルを削除
+    {
+        skillList.Remove(enemySkill);
+    }
+
+    public async UniTask Talk(string str, int interval = 2000)
+    {
+        await enemyText.SetText(str, interval);
     }
 }

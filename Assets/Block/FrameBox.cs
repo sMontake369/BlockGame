@@ -5,8 +5,7 @@ using UnityEngine;
 public class FrameBox
 {
     public bool canMove = true; //移動できるか
-    BaseBlock baseBlock;
-    public BaseBlock BaseBlock { get { return baseBlock; } }
+    public BaseBlock baseBlock { get; private set; }
 
     BaseBlock tmpBlock; 
 

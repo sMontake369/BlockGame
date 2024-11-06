@@ -5,9 +5,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "isEnemyHp", menuName = "EffectRequirement/CreateIsEnemyHp")]
 public class isEnemyHp : OccurRequirement
 {
-    [Header("発動するHPの割合")]
-    public int HPRatio; //HPの割合
-    public bool isAbove = false; //trueならHPが指定した割合以上の時に発動、falseなら指定した割合以下の時に発動
+    [Header("HPの最大割合")] [Range(0, 100)]
+    public int max = 100; //HPの割合
+    [Header("HPの最低割合")] [Range(0, 100)]
+    public int min = 0; //HPの割合
 
     public override void Init(Enemy enemy)
     {
@@ -16,11 +17,7 @@ public class isEnemyHp : OccurRequirement
 
     public override bool IsOccur()
     {
-        if(!isAbove && enemy.hp <= enemy.maxHp * HPRatio / 100)
-        {
-            return true;
-        }
-        else if(isAbove && enemy.hp >= enemy.maxHp * HPRatio / 100)
+        if(enemy.hp >= enemy.maxHp * min / 100 && enemy.hp <= enemy.maxHp * max / 100)
         {
             return true;
         }

@@ -16,6 +16,8 @@ public class StageManager : MonoBehaviour
 
 
     public StageData stageData;
+
+    [Header("jsonで呼び出すステージ名")]
     public string stageName;
 
     public void Awake()
@@ -24,6 +26,8 @@ public class StageManager : MonoBehaviour
         AudM = GetComponent<AudioManager>();
         CamM = FindFirstObjectByType<CameraManager>();
 
+        ConM.Init();
+        AudM.Init();
         CamM.Init();
     }
     // Start is called before the first frame update
@@ -44,27 +48,24 @@ public class StageManager : MonoBehaviour
         {
             BattleManager BatM = new GameObject("BattleManager").AddComponent<BattleManager>();
             BatM.name = "Battle" + battleData.name;
-            
-            if(i != 0) 
-            {
-                Vector3 offset = battleData.offset;
-                BatM.transform.position = battleList[i - 1].transform.position + offset;
-            }
             BatM.transform.SetParent(this.transform);
-            BatM.transform.rotation = transform.rotation;
-            BatM.Init();
             battleList.Add(BatM);
+            battleIndex = i;
+
+            if(i != 0) BatM.transform.position = battleList[i - 1].transform.position + new Vector3(battleData.offset.x, battleData.offset.y, 0);
+
+            BatM.Init(this);
             if(battleData) BatM.SetData(battleData);
             i++;
         }
+        battleIndex = 0;
         
         battleList[battleIndex].PlayBattle();
     }
 
     public void PlayNextBattle()
     {
-        battleIndex++;
-        if(battleIndex < battleList.Count) battleList[battleIndex].PlayBattle();
+        if(battleIndex < battleList.Count) battleList[++battleIndex].PlayBattle();
         else ClearStage();
     }
 

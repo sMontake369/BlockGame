@@ -22,7 +22,7 @@ public class AudioManager : MonoBehaviour
     public AudioClip nextStage;
     public AudioClip stageClear;
     // Start is called before the first frame update
-    void Awake()
+    public void Init()
     {
         SESource = this.AddComponent<AudioSource>();
         BGMSource = this.AddComponent<AudioSource>();
@@ -40,11 +40,14 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySound(AudioClip clip, float volume = 1)
     {
+        if(clip == null) return;
         SESource.PlayOneShot(clip, volume);
     }
 
     public void PlayNormalSound(NormalSound normalSound)
     {
+        if(normalSound == null) return;
+
         switch (normalSound)
         {
             case NormalSound.MoveBlock:
@@ -74,7 +77,7 @@ public class AudioManager : MonoBehaviour
             case NormalSound.Damage:
                 PlaySound(damage);
                 break;
-            case NormalSound.NextStage:
+            case NormalSound.NextBattle:
                 PlaySound(nextStage);
                 break;
             case NormalSound.StageClear:
@@ -84,17 +87,17 @@ public class AudioManager : MonoBehaviour
     }
 }
 
-    public enum NormalSound
-    {
-        MoveBlock,
-        RotateBlock,
-        OnGroundBlock,
-        Lined,
-        Attack,
-        ThrowBlock,
-        BlockStacking,
-        Hold,
-        Damage,
-        NextStage,
-        StageClear
-    }
+public enum NormalSound
+{
+    MoveBlock,
+    RotateBlock,
+    OnGroundBlock,
+    Lined,
+    Attack,
+    ThrowBlock,
+    BlockStacking,
+    Hold,
+    Damage,
+    NextBattle,
+    StageClear
+}

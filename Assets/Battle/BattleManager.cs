@@ -14,7 +14,7 @@ public class BattleManager : MonoBehaviour
     public EnemyManager EneM { get; private set; }
     public CameraManager CamM { get; private set; }
     public ControllerManager ConM { get; private set; }
-    AudioManager AudM;
+    public AudioManager AudM { get; private set; }
 
     public BattleState battleState { get; private set; }
 
@@ -26,9 +26,9 @@ public class BattleManager : MonoBehaviour
 
     public BorderInt battlePos { get; private set; } //battleの位置
 
-    public void Init()
+    public void Init(StageManager StaM)
     {
-        StaM = transform.parent.GetComponent<StageManager>();
+        this.StaM = StaM;
         ConM = StaM.ConM;
         CamM = StaM.CamM;
         AudM = StaM.AudM;
@@ -37,12 +37,11 @@ public class BattleManager : MonoBehaviour
 
         if(!StaM || !ConM || !CamM || !AudM) 
         {
-            Debug.Log("StageManager or ControllerManager is not found");
+            Debug.Log("any manager is not found");
             return;
         }
 
         GamM = new GameObject("GameManager").AddComponent<MainGameManager>();
-        GamM.name = "GameManager";
         GamM.transform.SetParent(this.transform);
         GamM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
@@ -50,33 +49,28 @@ public class BattleManager : MonoBehaviour
         FraM.transform.SetParent(this.transform);
         FraM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
-        EneM = new GameObject().AddComponent<EnemyManager>();
-        EneM.name = "EnemyManager";
+        EneM = new GameObject("EnemyManager").AddComponent<EnemyManager>();
         EneM.transform.SetParent(this.transform);
         EneM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
         AttM = new GameObject("AttackManager").AddComponent<AttackManager>();
-        AttM.name = "AttackManager";
         AttM.transform.SetParent(this.transform);
         AttM.transform.SetPositionAndRotation(transform.position, transform.rotation);
 
         GamM.Init(this);
+        FraM.Init(this);
         EneM.Init(this);
         AttM.Init(this);
-        FraM.Init(this);
     }
 
     public void SetData(BattleData battleData)
-    {   
+    {
         this.battleData = battleData;
-        FraM.name = "Frame" + battleData.name;
         textureData = battleData.textureData;
         blockShapeData = battleData.blockShapeData;
 
         //フレームを生成
-        FrameData frameData = battleData.frameData;
-        
-        Vector3Int frameSize = FraM.SetFrame(frameData);
+        Vector3Int frameSize = FraM.SetFrame(battleData.frameData);
 
         //battleの位置を設定
         Vector3Int pos = Vector3Int.RoundToInt(this.transform.position);
@@ -88,11 +82,15 @@ public class BattleManager : MonoBehaviour
 
     public async void PlayBattle() //バトルを開始
     {
+        //応急措置
+        // EneM.Init(this);
+        // EneM.Generate(battleData.enemyDataList);
+        //ここまで
         battleState = BattleState.Play;
         
         Vector2 battlePos = this.transform.position;
         CamM.SetPosAndOrtho(battlePos + battleData.cameraPos, battleData.orthoSize); //カメラの設定
-        AudM.PlayNormalSound(NormalSound.NextStage);
+        AudM.PlayNormalSound(NormalSound.NextBattle);
 
         await UniTask.Delay(2000); //カメラの移動待ち
 

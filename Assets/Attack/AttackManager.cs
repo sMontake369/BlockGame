@@ -16,7 +16,7 @@ public class AttackManager : MonoBehaviour
     AttackUI attackUI;
     int targetIndex = 0; //攻撃対象の番号
     [SerializeField]
-    public int maxEdge = 10; //最大の辺の長さ
+    public int maxEdge = 30; //最大の辺の長さ
 
     AttackRBlock aRBlock;
     List<BaseBlock> blockQueue = new List<BaseBlock>(); //待機中の攻撃ブロックのリスト
@@ -26,6 +26,7 @@ public class AttackManager : MonoBehaviour
     float rotateSpeed = 180; //回転速度
 
     public bool doUpdating = false; //攻撃ブロックを設定中か
+    bool doAttacking = false; //攻撃開始を命令 
     CancellationTokenSource cts;
     CancellationToken token;
 
@@ -54,11 +55,21 @@ public class AttackManager : MonoBehaviour
 
         rotateSpeed = 90 + Mathf.Clamp(aRBlock.GetBlockNum() * 3f, 0, 180);
         centerObject.transform.Rotate(new Vector3(-1, -1, -1), rotateSpeed * Time.deltaTime);
+
+        if(doAttacking && !doUpdating) Attack(); //攻撃命令が来て、設定中でない場合は攻撃
     }
 
-    public void Attack() //攻撃を実行
+    public void OrderAttack()
     {
         if(aRBlock == null) return;
+        doAttacking = true;
+    }
+
+    void Attack() //攻撃を実行
+    {
+        if(aRBlock == null) return;
+        doUpdating = false;
+        doAttacking = false;
 
         attackUI.Reset();
         attackUI.gameObject.SetActive(false);
@@ -71,7 +82,6 @@ public class AttackManager : MonoBehaviour
         //とりあえず全部消す。いずれこれも一緒に攻撃する
         foreach(BaseBlock block in blockQueue) Destroy(block.gameObject);
         blockQueue.Clear();
-        doUpdating = false;
     }
 
     public void Reset()

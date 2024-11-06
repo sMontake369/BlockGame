@@ -9,12 +9,19 @@ public class FrameData : ScriptableObject
     [Header("フレームのサイズ")]
     public Vector3Int frameSize;
 
-    [Header("ブロックが移動できるかとブロックの情報")] //サイズはlength、設置負荷の場合は-2,何もない場合は-1,ブロックの情報は0~割り当てる。
-    public List<int> indexDataList;
+    [Header("ブロックが移動できるかとブロックの情報")] //サイズはlength、設置不可の場合は-1,ブロックの情報は0~割り当てる。
+    public List<FrameIndexData> frameIndexList;
 
     [Header("ブロックの情報とテクスチャのリスト")]
     public List<BlockData> blockDataList;
     
+}
+
+[System.Serializable]
+public class FrameIndexData
+{
+    public Vector2Int pos;
+    public int dataIndex;
 }
 
 [System.Serializable]

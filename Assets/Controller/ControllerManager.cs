@@ -22,7 +22,7 @@ public class ControllerManager : MonoBehaviour
 
 
     // Start is called before the first frame update
-    public void Start()
+    public void Init()
     {
         mainInputAction = new MainInputAction();
         mainInputAction.Player.Move.started += context => Move(context.ReadValue<float>());

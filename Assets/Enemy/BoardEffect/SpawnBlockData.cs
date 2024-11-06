@@ -7,14 +7,21 @@ using Cysharp.Threading.Tasks;
 [CreateAssetMenu(fileName = "SpawnBlockData", menuName = "Effect/CreateSpawnBlockData")]
 public class SpawnBlockData : BaseEffectData
 {
+    [Header("生成するブロックのデータ(ランダムで一つ選ばれる)")]
     public List<RootBlockData> blockDataList;
+    [Header("生成タイプ")]
     public SpawnType spawnType;
+    [Header("特定の位置に生成する場合の座標")]
+    public Vector2Int specificPos;
+    [Header("ランダムに回転するか")]
+    public bool isRandomRot = true;
 
     MainGameManager GamM;
     FrameManager FraM;
     BattleManager BatM;
     AudioManager AudM;
 
+    [Header("SE")]
     public AudioClip setBlockSE = default;
     public AudioClip AttackSE = default;
 
@@ -48,8 +55,13 @@ public class SpawnBlockData : BaseEffectData
             case SpawnType.SandBlock:
                 pos = new Vector3Int(Random.Range(0, FraM.LFrameBorder.width), Random.Range(0, FraM.LFrameBorder.height - 8), 0);
                 break;
+            case SpawnType.SpecificPos:
+                pos = new Vector3Int(specificPos.x, specificPos.y, 0);
+                break;
+                
         }
-        Vector3Int rot = new Vector3Int(0, 0, Random.Range(0, 4));
+        Vector3Int rot = Vector3Int.zero;
+        if(isRandomRot) rot = new Vector3Int(0, 0, Random.Range(0, 4));
 
         //ブロックを生成
         RootBlock rootBlock = GamM.GenerateRBlock(blockDataList[Random.Range(0, blockDataList.Count)]);
@@ -129,5 +141,6 @@ public enum SpawnType
 {
     RandomPos,
     Drop,
-    SandBlock
+    SandBlock,
+    SpecificPos,
 }

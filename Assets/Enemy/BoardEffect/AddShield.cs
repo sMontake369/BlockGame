@@ -21,7 +21,7 @@ public class AddShield : BaseEffectData
     public override UniTask Execute()
     {
         BlockNumShield shield = new BlockNumShield(threshold, isLower, shieldColor, shieldImage);
-        enemy.GetComponent<Enemy>().SetShield(shield);
+        enemy.SetShield(shield);
         return UniTask.CompletedTask;
     }
 }

@@ -64,7 +64,7 @@ public class AttackRBlock : RootBlock //RAttack
         GameObject obj = Instantiate(video, transform.position + new Vector3((edge * 0.8f) / 2.0f, (edge * 0.8f) / 2.0f, -0.2f), Quaternion.Euler(90,180,0));
         obj.transform.localScale = new Vector3(edge / 10.0f, edge / 10.0f, edge / 10.0f);
         obj.transform.parent = transform;
-        for(int i = 0; i < 10; i++)
+        for(int i = 0; i < 8; i++)
         {
             AudM.PlayNormalSound(NormalSound.Hold);
             await UniTask.Delay(200);

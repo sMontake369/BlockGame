@@ -25,6 +25,7 @@ public class EnemyData : ScriptableObject
 [System.Serializable]
 public class EnemySkill
 {
+    public string name; //識別用
     [JsonIgnore]
     public List<BaseEffectData> boardEffectList;
     public AttackRequirement AttackReq; //攻撃の発動条件(条件を満たすと攻撃を行う)
@@ -56,7 +57,7 @@ public class EnemyEvent
     {
         foreach(BaseEffectData effect in boardEffectList) effect.Init(enemy);
         foreach(OccurRequirement req in occurReqList) req.Init(enemy);
-        if(occurReqList.Count == 0) Debug.LogError("occurReqListが空のため開始時に発動します");
+        // if(occurReqList.Count == 0) Debug.LogWarning("occurReqListが空のため開始時に発動します");
     }
 
     public bool isOccur()
