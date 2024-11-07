@@ -15,6 +15,8 @@ public class SpawnBlockData : BaseEffectData
     public Vector2Int specificPos;
     [Header("ランダムに回転するか")]
     public bool isRandomRot = true;
+    [Header("特定の位置に生成するか")]
+    public bool isSpecificPos = false;
 
     MainGameManager GamM;
     FrameManager FraM;
@@ -55,11 +57,9 @@ public class SpawnBlockData : BaseEffectData
             case SpawnType.SandBlock:
                 pos = new Vector3Int(Random.Range(0, FraM.LFrameBorder.width), Random.Range(0, FraM.LFrameBorder.height - 8), 0);
                 break;
-            case SpawnType.SpecificPos:
-                pos = new Vector3Int(specificPos.x, specificPos.y, 0);
-                break;
-                
         }
+        
+        if(isSpecificPos) pos = new Vector3Int(specificPos.x, specificPos.y, 0);
         Vector3Int rot = Vector3Int.zero;
         if(isRandomRot) rot = new Vector3Int(0, 0, Random.Range(0, 4));
 
@@ -73,18 +73,6 @@ public class SpawnBlockData : BaseEffectData
 
         //先に回転
         rootBlock.SRS(rot);
-
-        //この時点での衝突判定
-        for(int y = 0; y < rootBlock.BlockListList.Count; y++)
-        for(int x = 0; x < rootBlock.BlockListList[y].Count; x++)
-        {
-            if(rootBlock.BlockListList[y][x] == null) continue;
-            if(FraM.IsConflict(rootBlock.BlockListList[y][x], Vector3Int.zero))
-            {
-                rootBlock.BlockListList[y][x].DestroyBlock(false);
-            }
-        } 
-        if(!rootBlock.isActiveAndEnabled) return;
 
         //ゴーストブロックを生成
         rootBlock.GenerateGhostBlock(false);
@@ -141,6 +129,5 @@ public enum SpawnType
 {
     RandomPos,
     Drop,
-    SandBlock,
-    SpecificPos,
+    SandBlock
 }

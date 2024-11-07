@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using Cysharp.Threading.Tasks;
+using System.Threading;
+using System;
+using UnityEngine.AddressableAssets;
 
 public class AttackRBlock : RootBlock //RAttack
 {   
@@ -11,20 +14,119 @@ public class AttackRBlock : RootBlock //RAttack
     List<Texture> textureList = new List<Texture>();
     AudioManager AudM;
 
-    public void Start()
+    Enemy targetEnemy; //攻撃対象の敵
+
+    bool isAttack = false; //攻撃指示が出ているか
+    bool doAttacking = false; //攻撃中か
+
+    CancellationTokenSource cts;
+    CancellationToken token;
+
+    int attackQueueNum = 0; //攻撃待機リストの数
+    int playAddAttackQueueNum = 0; //AddAttackQueueの実行回数
+    List<BaseBlock> blockQueue = new List<BaseBlock>(); //待機中の攻撃ブロックのリスト
+    public bool doUpdating = false; //攻撃ブロックを設定中か
+    AttackUI attackUI;
+    public int edge { private set; get; } = 0; //現在の正方形の辺の長さ
+    AttackManager AttM;
+    float rotateSpeed;
+    GameObject centerObject;
+    GameObject videoObj;
+
+    public void Init(AttackManager AttM) //初期化
     {
+        this.AttM = AttM;
         AudM = FindFirstObjectByType<StageManager>().AudM;
+
+        attackUI = Addressables.InstantiateAsync("AttackCanvas").WaitForCompletion().GetComponent<AttackUI>();
+        attackUI.GetComponent<Canvas>().worldCamera = Camera.main;
+        attackUI.transform.SetParent(this.transform);
+        attackUI.transform.position = this.transform.position + new Vector3(0, 0, -1f);
+
+        centerObject = new GameObject("WaitingList");
+        centerObject.transform.SetParent(this.transform);
+    }
+    
+    public void Update()
+    {
+        rotateSpeed = 90 + Mathf.Clamp(GetBlockNum() * 3f, 0, 180);
+        centerObject.transform.Rotate(new Vector3(-1, -1, -1), rotateSpeed * Time.deltaTime);
+
+        if(isAttack && !doUpdating && !doAttacking) Attack(); //攻撃命令が来て、設定中でない場合は攻撃
     }
 
-    public int edge { private set; get; } = 0; //現在の正方形の辺の長さ
+    public async void AddAttackQueue(List<BaseBlock> blockList, int lineNum) //消されたブロックを攻撃ブロックとして待機リストに追加
+    {
+        if(token.IsCancellationRequested) return;
+        doUpdating = true;
+        playAddAttackQueueNum++;
+
+        AddPower(blockList.Count, lineNum);
+        attackUI.SetPower(power);
+        attackQueueNum += blockList.Count;
+
+        UpdateWaitingBlock(token);
+        attackUI.SetPos(Mathf.FloorToInt(MathF.Sqrt(attackQueueNum + GetBlockNum())));
+
+        foreach(BaseBlock block in blockList)
+        {
+            Sequence seq = DOTween.Sequence();
+            _ = seq.Append(block.transform.DOMoveX(this.transform.position.x, 0.5f).SetEase(Ease.OutCubic))
+            .AppendCallback(() => blockQueue.Add(block))
+            .AppendCallback(() => AddWaitingBlock(block));
+            await UniTask.Delay(50);
+        }
+        await UniTask.Delay(450);
+
+        playAddAttackQueueNum--;
+
+        if(playAddAttackQueueNum != 0) return; //AddAttackQueueが複数回実行されている場合は待機
+
+        await CheckEnoughBlocks(token);
+        doUpdating = false;
+    }
     
-    public bool CanSquire(int blockNum)
+    async UniTask CheckEnoughBlocks(CancellationToken token) //必要数を攻撃ブロックに、余りを待機ブロックに設定
+    {
+        while(CanSquire(blockQueue.Count))
+        {
+            int needNum = (edge + 1) * (edge + 1) - edge * edge;
+            List<BaseBlock> blockList = blockQueue.GetRange(0, needNum);
+            blockQueue.RemoveRange(0, needNum);
+            await SetSquire(blockList);
+            attackQueueNum -= needNum;
+            if(edge >= AttM.maxEdge) Attack();
+        }
+        await UniTask.Delay(500, cancellationToken: token);
+        UpdateWaitingBlock(token);
+    }
+
+    async void UpdateWaitingBlock(CancellationToken token) //待機ブロックを設定
+    {
+        float radius = Mathf.FloorToInt(MathF.Sqrt(attackQueueNum + GetBlockNum()));
+        _ = centerObject.transform.DOMove(this.transform.position + new Vector3(radius / 2.0f - 1f, radius / 2.0f - 1f, 0), 0.5f);
+        
+        for(int i = 0; i < blockQueue.Count; i++)
+        {
+            var point =  ((float)i / attackQueueNum) * 2 * Mathf.PI;
+            float x = Mathf.Cos(point) * radius;
+            float y = Mathf.Sin(point) * radius;
+            
+            
+            _ = blockQueue[i].transform.DOLocalRotate(new Vector3(0,0, 360 / blockQueue.Count * i + 90), 0.5f).SetEase(Ease.InOutCubic);
+            _ = blockQueue[i].transform.DOLocalMove(new Vector3(x, y, 0), 0.5f).SetEase(Ease.InOutCubic);
+
+            await UniTask.Delay(50, cancellationToken: token);
+        }
+    }
+
+    bool CanSquire(int blockNum)
     {
         int needBlockNum = (edge + 1) * (edge + 1) - edge * edge;
         return blockNum >= needBlockNum;
     }
 
-    public async UniTask SetSquire(List<BaseBlock> blockList)
+    async UniTask SetSquire(List<BaseBlock> blockList)
     {
         int x;
         for(int y = 0; y <= edge; y++)
@@ -41,7 +143,7 @@ public class AttackRBlock : RootBlock //RAttack
                 AddBlock(block, index, false);
 
                 //アニメーション
-                _ = block.transform.DOJump(transform.position + index, 10, 1, 1f).SetEase(Ease.OutQuint);
+                _ = block.transform.DOMove(transform.position + index, 1f).SetEase(Ease.OutQuint);
                 _ = block.transform.DORotate(new Vector3(-90,0,0), 0.5f).SetEase(Ease.InExpo).OnComplete(() =>
                 {
                     AudM.PlayNormalSound(NormalSound.BlockStacking);
@@ -52,36 +154,76 @@ public class AttackRBlock : RootBlock //RAttack
         edge++;
     }
 
-    public void AddPower(int blockNum, int lineNum) 
+    void AddPower(int blockNum, int lineNum) 
     {
         this.power += Mathf.FloorToInt(blockNum * lineNum * (0.5f + 0.5f * lineNum));
     }
 
-    public async void Attack(Enemy enemy)
+    public void DoAttack(Enemy enemy) //攻撃命令を出す
     {
-        int edge = Mathf.CeilToInt(Mathf.Sqrt(GetBlockNum()));
+        targetEnemy = enemy;
+        isAttack = true;
+    }
+
+    async void Attack()
+    {
+        isAttack = false;
+        doAttacking = true;
         GameObject video = Resources.Load<GameObject>("video");
-        GameObject obj = Instantiate(video, transform.position + new Vector3((edge * 0.8f) / 2.0f, (edge * 0.8f) / 2.0f, -0.2f), Quaternion.Euler(90,180,0));
-        obj.transform.localScale = new Vector3(edge / 10.0f, edge / 10.0f, edge / 10.0f);
-        obj.transform.parent = transform;
+        videoObj = Instantiate(video, transform.position + new Vector3((edge * 0.8f) / 2.0f, (edge * 0.8f) / 2.0f, -0.2f), Quaternion.Euler(90,180,0));
+        videoObj.transform.localScale = new Vector3(edge / 10.0f, edge / 10.0f, edge / 10.0f);
+        videoObj.transform.parent = transform;
         for(int i = 0; i < 8; i++)
         {
             AudM.PlayNormalSound(NormalSound.Hold);
             await UniTask.Delay(200);
         }
         
+        if(targetEnemy == null) 
+        {
+            Destroy();
+            return;
+        }  
 
-        _ = transform.DOMove(enemy.transform.position + new Vector3(-5,0,0), 0.6f).SetEase(Ease.InBack,3); //-5は攻撃ブロックの原点が一番左にあるからあくまで仮の値
+        _ = transform.DOMove(targetEnemy.transform.position + new Vector3(-5,0,0), 0.6f).SetEase(Ease.InBack, 3); //-5は攻撃ブロックの原点が一番左にあるからあくまで仮の値
         await UniTask.Delay(270);
         AudM.PlayNormalSound(NormalSound.ThrowBlock);
         await UniTask.Delay(330);
-        if(enemy) 
+        if(targetEnemy) 
         {
-            enemy.Damage(this);
+            targetEnemy.Damage(this);
             AudM.PlayNormalSound(NormalSound.Attack);
         }
+        
+        doAttacking = false;
+        Destroy();
+    }
 
-        Destroy(this.gameObject);
+    public override void Destroy()
+    {
+        Destroy(attackUI.gameObject);
+        Destroy(centerObject);
+        if(videoObj) Destroy(videoObj);
+        foreach(BaseBlock block in BlockList)
+        {
+            if(doUpdating) block.DOKill();
+            block.DestroyBlock(false); //checkValidのおかげでRootBlockも消える
+        }
+    }
+
+    async void AddWaitingBlock(BaseBlock block) //待機ブロックを設定
+    {
+        float radius = Mathf.FloorToInt(MathF.Sqrt(attackQueueNum + GetBlockNum()));
+        block.transform.parent = centerObject.transform;
+        
+        var point =  ((float)blockQueue.IndexOf(block) / attackQueueNum) * 2 * Mathf.PI;
+        float x = Mathf.Cos(point) * radius;
+        float y = Mathf.Sin(point) * radius;
+        
+        // _ = block.transform.DOLocalRotate(new Vector3(0,0, 360 / blockQueue.Count * index + 90), 0.5f).SetEase(Ease.InOutCubic);
+        _ = block.transform.DOLocalMove(new Vector3(x, y, 0), 0.5f).SetEase(Ease.InOutCubic);
+
+        await UniTask.Delay(50, cancellationToken: token);
     }
 
     void ToOneBlock()

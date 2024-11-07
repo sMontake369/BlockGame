@@ -5,6 +5,7 @@ using Unity.VisualScripting;
 using DG.Tweening;
 using System.Linq;
 using UnityEngine.UIElements;
+using TMPro;
 
 public class MainGameManager : MonoBehaviour
 {
@@ -73,7 +74,7 @@ public class MainGameManager : MonoBehaviour
         playerBlock = null;
         bool isLined = CheckLine(); //playerBlockは列の判定対象外のため、nullにしてからでないと、列が揃っているか判定できない
 
-        if(!isLined) AttM.OrderAttack(); //攻撃
+        if(!isLined) AttM.DoAttack(); //攻撃
 
         TurnStart();
     }
@@ -255,25 +256,15 @@ public class MainGameManager : MonoBehaviour
             isLine = true;
             DeleteLine(lineList);
         }
-        else if(mainState == MainStateType.checkLine) mainState = MainStateType.running;
+        if(mainState == MainStateType.checkLine) mainState = MainStateType.running;
         return isLine;
     }
 
-    async void DeleteLine(List<int> lineList) //ラインを消す
+    void DeleteLine(List<int> lineList) //ラインを消す
     {
         mainState = MainStateType.deleting;
-        List<BaseBlock> curSearchBlockList = new List<BaseBlock>(); //現在探索しているブロックリスト
-        List<BaseBlock> nextSearchBlockList = new List<BaseBlock>(); //次に探索するブロックリスト
         List<BaseBlock> deleteBlockList = new List<BaseBlock>(); //削除するブロックリスト
         ColorType colorType; //変更する色
-
-        List<Vector3Int> neighborIndexList = new List<Vector3Int>()
-        {
-            Vector3Int.up,
-            Vector3Int.right,
-            Vector3Int.down,
-            Vector3Int.left
-        };
 
         //最大の世代数を持つルートブロックを取得
         BaseBlock maxGenBlock = null;
@@ -299,11 +290,11 @@ public class MainGameManager : MonoBehaviour
             BaseBlock deleteBlock = baseBlock.OnDelete(); //削除
             if(deleteBlock != null)
             {
+                deleteBlock.transform.parent = this.transform;
                 FraM.DeleteBlock(deleteBlock);
                 deleteBlock.SetColor(colorType, BatM.GetTexture(colorType)); // 色を変更
                 deleteBlockList.Add(deleteBlock);
             }
-            await UniTask.Delay(1);
         }
 
         if(mainState != MainStateType.idle) 

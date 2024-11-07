@@ -18,6 +18,7 @@ public class deleteSkill : BaseEffectData
                 break;
             }
         }
+        if(enemy.nextSkill.name == deleteSkillName) enemy.DeleteNextSkill();
         return UniTask.CompletedTask;
     }
 

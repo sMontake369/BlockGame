@@ -14,11 +14,7 @@ public class Talk : BaseEffectData
 
     public override async UniTask Execute()
     {
-        foreach(string text in textList)
-        {
-            if(isWait) await enemy.Talk(text, interval);
-            else _ = enemy.Talk(text, interval);
-        }
+        foreach(string text in textList) await enemy.Talk(text, interval);
     }
 
     public override void Init(Enemy enemy)

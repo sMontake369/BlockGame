@@ -15,7 +15,7 @@ public class Enemy : MonoBehaviour
     public int hp { get; private set; } //現在のHP
     public List<EnemySkill> skillList { get; private set; }  //スキルリスト
     List<EnemyEvent> eventList; //イベントリスト
-    EnemySkill nextSkill; //次に発動するスキル
+    public EnemySkill nextSkill { get; private set; } //次に発動するスキル
     Shield shield;
     List<ColorType> weakColorList = new List<ColorType>();
 
@@ -240,6 +240,12 @@ public class Enemy : MonoBehaviour
     public void DeleteSkill(EnemySkill enemySkill) //スキルを削除
     {
         skillList.Remove(enemySkill);
+    }
+
+    public void DeleteNextSkill() //スキルを削除
+    {
+        nextSkill.AttackReq.isEnd();
+        nextSkill = null;
     }
 
     public async UniTask Talk(string str, int interval = 2000)

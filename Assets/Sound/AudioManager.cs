@@ -7,7 +7,7 @@ using UnityEngine;
 public class AudioManager : MonoBehaviour
 {
     AudioSource BGMSource;
-    AudioSource SESource;
+    List<AudioSource> SESourceList;
 
     public AudioClip BGM;
     public AudioClip moveBlock;
@@ -21,12 +21,24 @@ public class AudioManager : MonoBehaviour
     public AudioClip damage;
     public AudioClip nextStage;
     public AudioClip stageClear;
+
+    int audioIndex = 0;
     // Start is called before the first frame update
     public void Init()
     {
-        SESource = this.AddComponent<AudioSource>();
         BGMSource = this.AddComponent<AudioSource>();
         SetBGM();
+
+        SESourceList = new List<AudioSource>();
+        for(int i = 0; i < 20; i++)
+        {
+            GameObject obj = new GameObject("AudioSource" + i);
+            obj.transform.SetParent(this.transform);
+            AudioSource audioSource = obj.AddComponent<AudioSource>();
+            audioSource.volume = 0.5f;
+            audioSource.playOnAwake = false;
+            SESourceList.Add(audioSource);
+        }
     }
 
     public void SetBGM()
@@ -41,13 +53,12 @@ public class AudioManager : MonoBehaviour
     public void PlaySound(AudioClip clip, float volume = 1)
     {
         if(clip == null) return;
-        SESource.PlayOneShot(clip, volume);
+        SESourceList[audioIndex].PlayOneShot(clip, volume);
+        audioIndex = ++audioIndex % 20;
     }
 
     public void PlayNormalSound(NormalSound normalSound)
     {
-        if(normalSound == null) return;
-
         switch (normalSound)
         {
             case NormalSound.MoveBlock:

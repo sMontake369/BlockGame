@@ -29,6 +29,8 @@ public class StageManager : MonoBehaviour
         ConM.Init();
         AudM.Init();
         CamM.Init();
+
+        DG.Tweening.DOTween.SetTweensCapacity(tweenersCapacity:20000, sequencesCapacity:200);
     }
     // Start is called before the first frame update
     void Start()
@@ -65,7 +67,8 @@ public class StageManager : MonoBehaviour
 
     public void PlayNextBattle()
     {
-        if(battleIndex < battleList.Count) battleList[++battleIndex].PlayBattle();
+        battleIndex++;
+        if(battleIndex < battleList.Count) battleList[battleIndex].PlayBattle();
         else ClearStage();
     }
 

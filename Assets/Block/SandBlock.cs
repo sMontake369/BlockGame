@@ -10,7 +10,7 @@ public class SandBlock : RootBlock
     // Update is called once per frame
     async void Update()
     {
-        if(FraM.IsConflict(this, Vector3Int.down))
+        if(!FraM.IsConflict(this, Vector3Int.down))
         {
             foreach(BaseBlock baseBlock in BlockList) if(!baseBlock.canMove) return; //移動できないブロックがある場合
             if(FraM.IsConflict(this, Vector3Int.down)) 
@@ -29,7 +29,7 @@ public class SandBlock : RootBlock
         FraM.DeleteRBlock(this);
         foreach(BaseBlock baseBlock in BlockList) baseBlock.frameIndex += Vector3Int.down;
         FraM.SetRBlock(this);
-        await this.transform.DOMove(this.transform.position + Vector3.down, 0.05f).SetEase(Ease.Linear);
+        await this.transform.DOMove(this.transform.position + Vector3.down, 0.1f).SetEase(Ease.Linear);
         isFalling = false;
     }
 
