@@ -1,20 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 public class TitleButton : MonoBehaviour
 {
     void Start()
     {
-        // ボタンAのOnClickイベントにハンドラを追加
-        Button startButton = GameObject.Find("Start").GetComponent<Button>();
-        startButton.onClick.AddListener(StartGame);
-
-        // ボタンBのOnClickイベントにハンドラを追加
-        Button exitButton = GameObject.Find("Exit").GetComponent<Button>();
-        exitButton.onClick.AddListener(ExitGame);
+        var root = GetComponent<UIDocument>().rootVisualElement;
+        root.Q<Button>("Start_Button").clicked += StartGame;
+        root.Q<Button>("Exit_Button").clicked += ExitGame;
     }
 
     void StartGame()

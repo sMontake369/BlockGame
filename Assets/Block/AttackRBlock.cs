@@ -6,32 +6,32 @@ using Cysharp.Threading.Tasks;
 using System.Threading;
 using System;
 using UnityEngine.AddressableAssets;
+using System.Linq;
 
 public class AttackRBlock : RootBlock //RAttack
-{   
-    public int power { private set; get; } = 0;
-    public List<ColorType> colorTypeList { private set; get; } = new List<ColorType>(); //攻撃ブロックの色のリスト
-    List<Texture> textureList = new List<Texture>();
+{
     AudioManager AudM;
-
+    AttackManager AttM;
+    AttackUI attackUI;
+    GameObject centerObject;
+    GameObject videoObj;
     Enemy targetEnemy; //攻撃対象の敵
+
+    public int power { private set; get; } = 0;
+    public List<ColorType> attackColorList { private set; get; } = new List<ColorType>(); //攻撃ブロックの色のリスト
+    List<Texture> attackTextureList = new List<Texture>();
 
     bool isAttack = false; //攻撃指示が出ているか
     bool doAttacking = false; //攻撃中か
 
-    CancellationTokenSource cts;
-    CancellationToken token;
+    public bool doUpdating = false; //攻撃ブロックを設定中か
+    bool doChecking = false; //攻撃ブロックの設定中か
 
     int attackQueueNum = 0; //攻撃待機リストの数
     int playAddAttackQueueNum = 0; //AddAttackQueueの実行回数
-    List<BaseBlock> blockQueue = new List<BaseBlock>(); //待機中の攻撃ブロックのリスト
-    public bool doUpdating = false; //攻撃ブロックを設定中か
-    AttackUI attackUI;
-    public int edge { private set; get; } = 0; //現在の正方形の辺の長さ
-    AttackManager AttM;
+    List<BaseBlock> blockQueue; //待機中の攻撃ブロックのリスト
+    int edge = 0; //現在の正方形の辺の長さ
     float rotateSpeed;
-    GameObject centerObject;
-    GameObject videoObj;
 
     public void Init(AttackManager AttM) //初期化
     {
@@ -45,6 +45,8 @@ public class AttackRBlock : RootBlock //RAttack
 
         centerObject = new GameObject("WaitingList");
         centerObject.transform.SetParent(this.transform);
+
+        blockQueue = new List<BaseBlock>();
     }
     
     public void Update()
@@ -57,7 +59,6 @@ public class AttackRBlock : RootBlock //RAttack
 
     public async void AddAttackQueue(List<BaseBlock> blockList, int lineNum) //消されたブロックを攻撃ブロックとして待機リストに追加
     {
-        if(token.IsCancellationRequested) return;
         doUpdating = true;
         playAddAttackQueueNum++;
 
@@ -65,7 +66,7 @@ public class AttackRBlock : RootBlock //RAttack
         attackUI.SetPower(power);
         attackQueueNum += blockList.Count;
 
-        UpdateWaitingBlock(token);
+        UpdateWaitingBlock();
         attackUI.SetPos(Mathf.FloorToInt(MathF.Sqrt(attackQueueNum + GetBlockNum())));
 
         foreach(BaseBlock block in blockList)
@@ -74,20 +75,21 @@ public class AttackRBlock : RootBlock //RAttack
             _ = seq.Append(block.transform.DOMoveX(this.transform.position.x, 0.5f).SetEase(Ease.OutCubic))
             .AppendCallback(() => blockQueue.Add(block))
             .AppendCallback(() => AddWaitingBlock(block));
-            await UniTask.Delay(50);
+            await UniTask.Delay(10);
         }
-        await UniTask.Delay(450);
+        await UniTask.Delay(490);
 
         playAddAttackQueueNum--;
 
-        if(playAddAttackQueueNum != 0) return; //AddAttackQueueが複数回実行されている場合は待機
+        if(playAddAttackQueueNum != 0 || doChecking) return; //AddAttackQueueが複数回実行されている場合は待機
 
-        await CheckEnoughBlocks(token);
+        await CheckEnoughBlocks();
         doUpdating = false;
     }
     
-    async UniTask CheckEnoughBlocks(CancellationToken token) //必要数を攻撃ブロックに、余りを待機ブロックに設定
+    async UniTask CheckEnoughBlocks() //必要数を攻撃ブロックに、余りを待機ブロックに設定
     {
+        doChecking = true;
         while(CanSquire(blockQueue.Count))
         {
             int needNum = (edge + 1) * (edge + 1) - edge * edge;
@@ -97,11 +99,12 @@ public class AttackRBlock : RootBlock //RAttack
             attackQueueNum -= needNum;
             if(edge >= AttM.maxEdge) Attack();
         }
-        await UniTask.Delay(500, cancellationToken: token);
-        UpdateWaitingBlock(token);
+        await UniTask.Delay(500);
+        UpdateWaitingBlock();
+        doChecking = false;
     }
 
-    async void UpdateWaitingBlock(CancellationToken token) //待機ブロックを設定
+    async void UpdateWaitingBlock() //待機ブロックを設定
     {
         float radius = Mathf.FloorToInt(MathF.Sqrt(attackQueueNum + GetBlockNum()));
         _ = centerObject.transform.DOMove(this.transform.position + new Vector3(radius / 2.0f - 1f, radius / 2.0f - 1f, 0), 0.5f);
@@ -116,7 +119,7 @@ public class AttackRBlock : RootBlock //RAttack
             _ = blockQueue[i].transform.DOLocalRotate(new Vector3(0,0, 360 / blockQueue.Count * i + 90), 0.5f).SetEase(Ease.InOutCubic);
             _ = blockQueue[i].transform.DOLocalMove(new Vector3(x, y, 0), 0.5f).SetEase(Ease.InOutCubic);
 
-            await UniTask.Delay(50, cancellationToken: token);
+            await UniTask.Delay(50);
         }
     }
 
@@ -135,8 +138,8 @@ public class AttackRBlock : RootBlock //RAttack
             else x = 0;
             for(; x <= edge; x++)
             {
-                BaseBlock block = blockList[0];
-                blockList.RemoveAt(0);
+                BaseBlock block = blockList.First();
+                blockList.Remove(block);
                 block.transform.DOKill();
 
                 Vector3Int index = new Vector3Int(x, y, 0); //正方形に配置する座標
@@ -223,7 +226,7 @@ public class AttackRBlock : RootBlock //RAttack
         // _ = block.transform.DOLocalRotate(new Vector3(0,0, 360 / blockQueue.Count * index + 90), 0.5f).SetEase(Ease.InOutCubic);
         _ = block.transform.DOLocalMove(new Vector3(x, y, 0), 0.5f).SetEase(Ease.InOutCubic);
 
-        await UniTask.Delay(50, cancellationToken: token);
+        await UniTask.Delay(50);
     }
 
     void ToOneBlock()
@@ -231,9 +234,9 @@ public class AttackRBlock : RootBlock //RAttack
         foreach(BaseBlock block in BlockList)
         {
             ColorType colorType = block.colorType;
-            if(colorTypeList.Contains(colorType)) continue;
-            colorTypeList.Add(colorType);
-            textureList.Add(block.GetComponent<Renderer>().material.mainTexture);
+            if(attackColorList.Contains(colorType)) continue;
+            attackColorList.Add(colorType);
+            attackTextureList.Add(block.GetComponent<Renderer>().material.mainTexture);
         }
 
         int edge = Mathf.CeilToInt(Mathf.Sqrt(GetBlockNum()));
@@ -253,7 +256,7 @@ public class AttackRBlock : RootBlock //RAttack
     void TextureChange(BaseBlock baseBlock)
     {
         int textureSize = 512; // テクスチャのサイズ
-        int count = textureList.Count;
+        int count = attackTextureList.Count;
         int subTextureSize = textureSize / count;  // 各テクスチャのサイズ
 
         // 結果のテクスチャを作成
@@ -262,7 +265,7 @@ public class AttackRBlock : RootBlock //RAttack
         // 各テクスチャをリサイズしてコピー
         for(int i = 0; i < count; i++)
         {
-            Texture texture = textureList[i];
+            Texture texture = attackTextureList[i];
             int x = i * subTextureSize;
 
             // テクスチャの一部を新しいテクスチャにコピー

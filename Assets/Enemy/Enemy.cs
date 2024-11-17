@@ -113,7 +113,7 @@ public class Enemy : MonoBehaviour
 
         foreach(ColorType colorType in weakColorList)
         {
-            if(attackRBlock.colorTypeList.Contains(colorType))
+            if(attackRBlock.attackColorList.Contains(colorType))
             {
                 weaknessMultiplier *= 2;
                 break;

@@ -11,6 +11,8 @@ public class StageManager : MonoBehaviour
     public ControllerManager ConM;
     [HideInInspector]
     public AudioManager AudM;
+    [HideInInspector]
+    public GameUIManager UIM;
 
     int battleIndex = 0;
 
@@ -24,11 +26,13 @@ public class StageManager : MonoBehaviour
     {
         ConM = GetComponent<ControllerManager>();
         AudM = GetComponent<AudioManager>();
+        UIM = GetComponent<GameUIManager>();
         CamM = FindFirstObjectByType<CameraManager>();
 
         ConM.Init();
         AudM.Init();
         CamM.Init();
+        UIM.Init();
 
         DG.Tweening.DOTween.SetTweensCapacity(tweenersCapacity:20000, sequencesCapacity:200);
     }
@@ -63,6 +67,7 @@ public class StageManager : MonoBehaviour
         battleIndex = 0;
         
         battleList[battleIndex].PlayBattle();
+        AudM.SetBGM();
     }
 
     public void PlayNextBattle()

@@ -49,14 +49,14 @@ public class DeleteBlock : BaseEffectData
         foreach(BaseBlock block in deleteBlockList)
         {
             _ = DOTween.Sequence()
-                .Append(block.transform.DOShakePosition(1f, 0.1f, 40, 10, false, false))
+                .Append(block.transform.DOShakePosition(0.5f, 0.1f, 40, 10, false, false))
                 .Append(block.transform.DOScale(Vector3.zero, 0.5f))
                 .OnComplete(() =>
                 {
                     BlockPool.ReleaseNotBaseBlock(block);
                 });
         }
-        await UniTask.Delay(1000);
+        await UniTask.Delay(500);
         AudM.PlaySound(deleteBlockSE);
     }
 

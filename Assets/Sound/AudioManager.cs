@@ -27,7 +27,9 @@ public class AudioManager : MonoBehaviour
     public void Init()
     {
         BGMSource = this.AddComponent<AudioSource>();
-        SetBGM();
+        BGMSource.volume = 0.1f;
+        BGMSource.clip = BGM;
+        BGMSource.loop = true;
 
         SESourceList = new List<AudioSource>();
         for(int i = 0; i < 20; i++)
@@ -43,9 +45,6 @@ public class AudioManager : MonoBehaviour
 
     public void SetBGM()
     {
-        BGMSource.volume = 0.1f;
-        BGMSource.clip = BGM;
-        BGMSource.loop = true;
         BGMSource.Play();
         BGMSource.DOFade(endValue: 0.5f, duration: 5f);
     }

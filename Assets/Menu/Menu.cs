@@ -8,24 +8,24 @@ using UnityEngine;
 public class Menu : MonoBehaviour
 {
     MainInputAction mainInputAction;
-    public GameObject circle;
+    public GameObject worldObj;
     public GameObject player;
+    WorldShape worldShape;
     // Start is called before the first frame update
     void Start()
     {
         mainInputAction = new MainInputAction();
         mainInputAction.UI.Move.started += Move;
         mainInputAction.Enable();
+        worldShape = worldObj.GetComponent<WorldShape>();
     }
 
     async void Move(InputAction.CallbackContext context)
     {
         int input = (int)context.ReadValue<float>();
         mainInputAction.Disable();
-        await DOTween.Sequence()
-            .Join(circle.transform.DOLocalRotate(circle.transform.localRotation.eulerAngles + new Vector3(0, 36, 0) * input, 0.25f))
-            .Join(circle.transform.DOLocalMoveY(circle.transform.localPosition.y + 0.1f * -input, 0.25f))
-            .Join(player.transform.DOLocalJump(player.transform.localPosition, 0.3f, 1, 0.25f));
+        worldShape.Rotate(input);
+        await player.transform.DOLocalJump(player.transform.localPosition, 0.5f, 1, 0.25f);
         mainInputAction.Enable();
     }
 }

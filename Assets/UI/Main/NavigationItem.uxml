@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="VisualElement" style="flex-grow: 1; align-self: flex-start; flex-direction: row; width: 100%; height: 5%; margin-right: 2.5%; margin-left: 2.5%;">
+        <ui:VisualElement name="Icon" style="flex-grow: 1; background-image: url(&apos;project://database/Assets/Materials/oldTexture/FreeTexture/003_07_click.png?fileID=2800000&amp;guid=d1b937903092ef448b25eb02e6f9e6c6&amp;type=3#003_07_click&apos;); width: 20%; height: 100%; -unity-background-scale-mode: scale-to-fit;" />
+        <ui:Label tabindex="-1" text="Text" display-tooltip-when-elided="true" name="Name" enable-rich-text="true" parse-escape-sequences="false" selectable="false" style="height: 100%; width: 75%; font-size: 25%; -unity-text-align: middle-left; white-space: nowrap; color: rgb(229, 229, 229); -unity-font-style: bold; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+    </ui:VisualElement>
+</ui:UXML>
