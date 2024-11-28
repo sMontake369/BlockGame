@@ -202,7 +202,7 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
             ""id"": ""187075fa-0c9f-4e62-bc34-1c3e097e948c"",
             ""actions"": [
                 {
-                    ""name"": ""Move"",
+                    ""name"": ""LeftRight"",
                     ""type"": ""Button"",
                     ""id"": ""85112572-0db1-43b5-8d7a-f5d77efe88a2"",
                     ""expectedControlType"": ""Button"",
@@ -211,7 +211,16 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""Return"",
+                    ""name"": ""UpDown"",
+                    ""type"": ""Button"",
+                    ""id"": ""3bfb4df1-119a-4f83-87ef-fe2e65a4b729"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Back"",
                     ""type"": ""Button"",
                     ""id"": ""368d6045-b9da-4ceb-8037-14f5b5484fe7"",
                     ""expectedControlType"": ""Button"",
@@ -264,7 +273,7 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Return"",
+                    ""action"": ""Back"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -319,7 +328,7 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Move"",
+                    ""action"": ""LeftRight"",
                     ""isComposite"": true,
                     ""isPartOfComposite"": false
                 },
@@ -330,7 +339,7 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Move"",
+                    ""action"": ""LeftRight"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 },
@@ -341,7 +350,40 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Move"",
+                    ""action"": ""LeftRight"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""1D Axis"",
+                    ""id"": ""2f28cd77-1eeb-441d-9b41-419246757da4"",
+                    ""path"": ""1DAxis"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""UpDown"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""positive"",
+                    ""id"": ""58834266-c06e-43dc-a129-594ff4f0937f"",
+                    ""path"": ""<Keyboard>/w"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""UpDown"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""negative"",
+                    ""id"": ""f4a4b4ea-e895-48bc-949e-62859f6d939d"",
+                    ""path"": ""<Keyboard>/s"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""UpDown"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
                 }
@@ -359,8 +401,9 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
         m_Player_Hold = m_Player.FindAction("Hold", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
-        m_UI_Move = m_UI.FindAction("Move", throwIfNotFound: true);
-        m_UI_Return = m_UI.FindAction("Return", throwIfNotFound: true);
+        m_UI_LeftRight = m_UI.FindAction("LeftRight", throwIfNotFound: true);
+        m_UI_UpDown = m_UI.FindAction("UpDown", throwIfNotFound: true);
+        m_UI_Back = m_UI.FindAction("Back", throwIfNotFound: true);
         m_UI_Down = m_UI.FindAction("Down", throwIfNotFound: true);
         m_UI_Up = m_UI.FindAction("Up", throwIfNotFound: true);
         m_UI_Right = m_UI.FindAction("Right", throwIfNotFound: true);
@@ -504,8 +547,9 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
     // UI
     private readonly InputActionMap m_UI;
     private List<IUIActions> m_UIActionsCallbackInterfaces = new List<IUIActions>();
-    private readonly InputAction m_UI_Move;
-    private readonly InputAction m_UI_Return;
+    private readonly InputAction m_UI_LeftRight;
+    private readonly InputAction m_UI_UpDown;
+    private readonly InputAction m_UI_Back;
     private readonly InputAction m_UI_Down;
     private readonly InputAction m_UI_Up;
     private readonly InputAction m_UI_Right;
@@ -514,8 +558,9 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
     {
         private @MainInputAction m_Wrapper;
         public UIActions(@MainInputAction wrapper) { m_Wrapper = wrapper; }
-        public InputAction @Move => m_Wrapper.m_UI_Move;
-        public InputAction @Return => m_Wrapper.m_UI_Return;
+        public InputAction @LeftRight => m_Wrapper.m_UI_LeftRight;
+        public InputAction @UpDown => m_Wrapper.m_UI_UpDown;
+        public InputAction @Back => m_Wrapper.m_UI_Back;
         public InputAction @Down => m_Wrapper.m_UI_Down;
         public InputAction @Up => m_Wrapper.m_UI_Up;
         public InputAction @Right => m_Wrapper.m_UI_Right;
@@ -529,12 +574,15 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_UIActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_UIActionsCallbackInterfaces.Add(instance);
-            @Move.started += instance.OnMove;
-            @Move.performed += instance.OnMove;
-            @Move.canceled += instance.OnMove;
-            @Return.started += instance.OnReturn;
-            @Return.performed += instance.OnReturn;
-            @Return.canceled += instance.OnReturn;
+            @LeftRight.started += instance.OnLeftRight;
+            @LeftRight.performed += instance.OnLeftRight;
+            @LeftRight.canceled += instance.OnLeftRight;
+            @UpDown.started += instance.OnUpDown;
+            @UpDown.performed += instance.OnUpDown;
+            @UpDown.canceled += instance.OnUpDown;
+            @Back.started += instance.OnBack;
+            @Back.performed += instance.OnBack;
+            @Back.canceled += instance.OnBack;
             @Down.started += instance.OnDown;
             @Down.performed += instance.OnDown;
             @Down.canceled += instance.OnDown;
@@ -551,12 +599,15 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
 
         private void UnregisterCallbacks(IUIActions instance)
         {
-            @Move.started -= instance.OnMove;
-            @Move.performed -= instance.OnMove;
-            @Move.canceled -= instance.OnMove;
-            @Return.started -= instance.OnReturn;
-            @Return.performed -= instance.OnReturn;
-            @Return.canceled -= instance.OnReturn;
+            @LeftRight.started -= instance.OnLeftRight;
+            @LeftRight.performed -= instance.OnLeftRight;
+            @LeftRight.canceled -= instance.OnLeftRight;
+            @UpDown.started -= instance.OnUpDown;
+            @UpDown.performed -= instance.OnUpDown;
+            @UpDown.canceled -= instance.OnUpDown;
+            @Back.started -= instance.OnBack;
+            @Back.performed -= instance.OnBack;
+            @Back.canceled -= instance.OnBack;
             @Down.started -= instance.OnDown;
             @Down.performed -= instance.OnDown;
             @Down.canceled -= instance.OnDown;
@@ -596,8 +647,9 @@ public partial class @MainInputAction: IInputActionCollection2, IDisposable
     }
     public interface IUIActions
     {
-        void OnMove(InputAction.CallbackContext context);
-        void OnReturn(InputAction.CallbackContext context);
+        void OnLeftRight(InputAction.CallbackContext context);
+        void OnUpDown(InputAction.CallbackContext context);
+        void OnBack(InputAction.CallbackContext context);
         void OnDown(InputAction.CallbackContext context);
         void OnUp(InputAction.CallbackContext context);
         void OnRight(InputAction.CallbackContext context);

@@ -180,7 +180,7 @@
             "id": "187075fa-0c9f-4e62-bc34-1c3e097e948c",
             "actions": [
                 {
-                    "name": "Move",
+                    "name": "LeftRight",
                     "type": "Button",
                     "id": "85112572-0db1-43b5-8d7a-f5d77efe88a2",
                     "expectedControlType": "Button",
@@ -189,7 +189,16 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Return",
+                    "name": "UpDown",
+                    "type": "Button",
+                    "id": "3bfb4df1-119a-4f83-87ef-fe2e65a4b729",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Back",
                     "type": "Button",
                     "id": "368d6045-b9da-4ceb-8037-14f5b5484fe7",
                     "expectedControlType": "Button",
@@ -242,7 +251,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Return",
+                    "action": "Back",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -297,7 +306,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Move",
+                    "action": "LeftRight",
                     "isComposite": true,
                     "isPartOfComposite": false
                 },
@@ -308,7 +317,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Move",
+                    "action": "LeftRight",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -319,7 +328,40 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Move",
+                    "action": "LeftRight",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "2f28cd77-1eeb-441d-9b41-419246757da4",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UpDown",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "positive",
+                    "id": "58834266-c06e-43dc-a129-594ff4f0937f",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UpDown",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "negative",
+                    "id": "f4a4b4ea-e895-48bc-949e-62859f6d939d",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "UpDown",
                     "isComposite": false,
                     "isPartOfComposite": true
                 }

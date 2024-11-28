@@ -26,13 +26,13 @@ public class StageManager : MonoBehaviour
     {
         ConM = GetComponent<ControllerManager>();
         AudM = GetComponent<AudioManager>();
-        UIM = GetComponent<GameUIManager>();
+        // UIM = GetComponent<GameUIManager>();
         CamM = FindFirstObjectByType<CameraManager>();
 
         ConM.Init();
         AudM.Init();
         CamM.Init();
-        UIM.Init();
+        // UIM.Init();
 
         DG.Tweening.DOTween.SetTweensCapacity(tweenersCapacity:20000, sequencesCapacity:200);
     }
@@ -41,8 +41,10 @@ public class StageManager : MonoBehaviour
     {
         if(stageData == null) 
         {
-            if(stageName == "") return;
-            else stageData = ReadWrite.Read<StageData>(stageName);
+            // if(stageName == "") return;
+            // else stageData = ReadWrite.Read<StageData>(stageName);
+
+            stageData = SendStage.stageData;
             if(stageData == null) return;
         }
 

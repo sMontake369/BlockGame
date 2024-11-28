@@ -3,8 +3,10 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class StageShape : MonoBehaviour
 {
-    public void Create(int vertexNum, int posNum)
+    StageData stageData;
+    public void Create(StageData stageData, int vertexNum, int posNum)
     {
+        this.stageData = stageData;
         Mesh mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
 
@@ -25,6 +27,11 @@ public class StageShape : MonoBehaviour
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
+    }
+
+    public StageData GetStageData()
+    {
+        return stageData;
     }
 
     // private void Awake()

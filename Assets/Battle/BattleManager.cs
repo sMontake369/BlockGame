@@ -94,13 +94,13 @@ public class BattleManager : MonoBehaviour
 
         await UniTask.Delay(1000); //カメラの移動待ち
 
-        GameUIManager UIM = StaM.UIM;
-        for (int i = 0; i < 3; i++)
-        {
-            UIM.SetCenterText((3 - i).ToString() , 500);
-            await UniTask.Delay(500);
-        }
-        UIM.SetCenterText("", 0);
+        // // GameUIManager UIM = StaM.UIM;
+        // for (int i = 0; i < 3; i++)
+        // {
+        //     UIM.SetCenterText((3 - i).ToString() , 500);
+        //     await UniTask.Delay(500);
+        // }
+        // UIM.SetCenterText("", 0);
 
         EneM.PlayEnemy();
         ConM.SetGameManager(GamM);
