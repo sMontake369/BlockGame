@@ -27,7 +27,7 @@ public class AudioManager : MonoBehaviour
     public void Init()
     {
         BGMSource = this.AddComponent<AudioSource>();
-        BGMSource.volume = 0.1f;
+        BGMSource.volume = 0.05f;
         BGMSource.clip = BGM;
         BGMSource.loop = true;
 
@@ -46,12 +46,13 @@ public class AudioManager : MonoBehaviour
     public void SetBGM()
     {
         BGMSource.Play();
-        BGMSource.DOFade(endValue: 0.5f, duration: 5f);
+        BGMSource.DOFade(endValue: 0.05f, duration: 5f);
     }
 
     public void PlaySound(AudioClip clip, float volume = 1)
     {
         if(clip == null) return;
+        SESourceList[audioIndex].Stop();
         SESourceList[audioIndex].PlayOneShot(clip, volume);
         audioIndex = ++audioIndex % 20;
     }
@@ -110,4 +111,10 @@ public enum NormalSound
     Damage,
     NextBattle,
     StageClear
+}
+
+public enum BGM
+{
+    Title,
+    Game,
 }

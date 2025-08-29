@@ -6,7 +6,6 @@ using NaughtyAttributes;
 
 public class WorldShape : MonoBehaviour
 {
-    int curRot = 0;
     List<StageShape> stageList = new List<StageShape>();
 
     public List<StageShape> Create(WorldData worldData, int rot)
